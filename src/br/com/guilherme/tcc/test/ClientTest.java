@@ -25,7 +25,7 @@ public class ClientTest {
 	public static final Double r = 0.0215; // raio da roda
 	public static final Double R = 0.15;
 	public static final Double R_M = 0.22;
-	public static final Double CONST_EQ = 0.1;
+	public static final Double CONST_EQ = 0.089;
 
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
@@ -131,11 +131,11 @@ public class ClientTest {
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		
-		Double x = 0.0d, y = 0.0d, theta = 0.0d;
-		float x_a = 0.6f, y_a = 0.6f;
+		Double x = 0.0, y = 0.0, theta = 0.0;
+		Double x_a = 0.3, y_a = 0.3;
 		
-		float e_x, e_y, e_theta, theta_d;
-		double x_d = 0.0, y_d = 0.0;
+		Double e_x, e_y, e_theta, theta_d;
+		Double x_d = 0.0, y_d = 0.0;
 		
 		Double D_l, D_r, D_c;
 		float v, w, w_r, w_l;
@@ -163,20 +163,21 @@ public class ClientTest {
 			x_d = x_a;
 			y_d = y_a;
 			
-			e_x = (float) (x_d - x);
+			e_x = x_d - x;
 			//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
-			e_y = (float) (y_d - y);
-			//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y);
+			e_y = y_d - y;
+			//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y+"\n");
 			
-			if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.05){
+			RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
+			if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.023){
 				MOTOR_RIGTH.stop();
 				MOTOR_LEFT.stop();
 				break;
 			}
 			
-			theta_d = (float) (Math.atan2(e_y, e_x)); // radianos
-			e_theta = (float) (theta_d - theta);
-			e_theta = (float) (Math.atan2(Math.sin(e_theta), Math.cos(e_theta)));
+			theta_d = (Math.atan2(e_y, e_x)); // radianos
+			e_theta = (theta_d - theta);
+			e_theta = (Math.atan2(Math.sin(e_theta), Math.cos(e_theta)));
 			
 			double value = ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
 					- Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))))
@@ -185,7 +186,7 @@ public class ClientTest {
 			
 			v = (float) (0.1 * value + CONST_EQ);
 			
-			w = k_theta * e_theta;
+			w = (float) (k_theta * e_theta);
 			
 			w_r = (float) ((2 * v + w * L) / (2 * r)); // rad/s
 			w_r = (float) (w_r * RAD_TO_DEG);
