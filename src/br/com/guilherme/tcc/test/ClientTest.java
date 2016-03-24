@@ -23,9 +23,10 @@ public class ClientTest {
 	public static final Double RAD_TO_DEG = (180 / Math.PI);
 	public static final Double L = 0.1218; // tamanho do eixo das rodas do robô
 	public static final Double r = 0.0215; // raio da roda
-	public static final Double R = 0.15;
+	public static final Double R = 0.05;
 	public static final Double R_M = 0.22;
-	public static final Double CONST_EQ = 0.0875;
+	public static final Double CONST_EQ = 0.0878;
+	public static final Double CONST_FREQ = 0.3;
 
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
@@ -41,9 +42,6 @@ public class ClientTest {
 	public static final char CONNECT = 'c';
 	public static final char MANUAL_CONTROL = 'm';
 	public static final char AUTO_CONTROL = 'u';
-
-	// DEFINIÇÃO DE VARIÁVEIS UTILIZADAS PARA ESCREVER EM UM ARQUIVO
-	// private static ManagerCSVFiles manager;
 
 	// metodo principal
 	public static void main(String[] args) {
@@ -125,7 +123,6 @@ public class ClientTest {
 	public static void doControl() {
 		RConsole.open();
 		
-		
 		Long time = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
@@ -142,7 +139,7 @@ public class ClientTest {
 		float k_theta = 1.0f;
 
 		//37700
-		while (System.currentTimeMillis() - t0 <= 18800) {
+		while (System.currentTimeMillis() - t0 <= 37700) {
 
 			time = System.currentTimeMillis() - t0;
 			//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
@@ -158,10 +155,10 @@ public class ClientTest {
 				//y_d = y_a;
 			//}
 			
-			//x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
-			//y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
-			x_d = x_a;
-			y_d = y_a;
+			x_d = R * (Math.cos((CONST_FREQ * time.doubleValue())/1000)) + x_a;
+			y_d = R * (Math.sin((CONST_FREQ * time.doubleValue())/1000)) + y_a;
+			//x_d = x_a;
+			//y_d = y_a;
 			
 			e_x = x_d - x;
 			//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
