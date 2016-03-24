@@ -25,7 +25,7 @@ public class ClientTest {
 	public static final Double r = 0.0215; // raio da roda
 	public static final Double R = 0.15;
 	public static final Double R_M = 0.22;
-	public static final Double CONST_EQ = 0.0885;
+	public static final Double CONST_EQ = 0.0875;
 
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
