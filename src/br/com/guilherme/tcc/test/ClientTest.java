@@ -21,11 +21,11 @@ public class ClientTest {
 	public static final Integer SPEED = 30;
 	public static final Double DEG_TO_RAD = (Math.PI / 180);
 	public static final Double RAD_TO_DEG = (180 / Math.PI);
-	public static final Double L = 0.122; // tamanho do eixo das rodas do robô
+	public static final Double L = 0.1218; // tamanho do eixo das rodas do robô
 	public static final Double r = 0.0215; // raio da roda
 	public static final Double R = 0.15;
 	public static final Double R_M = 0.22;
-	public static final Double CONST_EQ = 0.089;
+	public static final Double CONST_EQ = 0.0885;
 
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
@@ -165,11 +165,13 @@ public class ClientTest {
 			
 			e_x = x_d - x;
 			//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
+			RConsole.println("x: "+x);
 			e_y = y_d - y;
 			//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y+"\n");
+			RConsole.println("y: "+y);
 			
 			RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
-			if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.023){
+			if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.0205){
 				MOTOR_RIGTH.stop();
 				MOTOR_LEFT.stop();
 				break;
