@@ -24,6 +24,7 @@ public class ClientTest {
 	public static final Double r = 0.0215; // raio da roda
 	public static final Double R = 0.2;
 	public static final Double R_M = 0.22;
+	public static final Double CONST_EQ = 0.08;
 
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
@@ -124,15 +125,15 @@ public class ClientTest {
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		
-		double x = 0.0, y = 0, theta = 0.0;//(float) Math.PI;//// (float) Math.PI;//
-		double x_a = 0.6, y_a = 0.6;
+		Double x = 0.0d, y = 0.0d, theta = 0.0d;//(float) Math.PI;//// (float) Math.PI;//
+		float x_a = 0.6f, y_a = 0.6f;
 		
-		double e_x, e_y, e_theta, theta_d;
+		float e_x, e_y, e_theta, theta_d;
 		double x_d = 0.0, y_d = 0.0;
 		
-		double D_l, D_r, D_c;
-		double v, w, w_r, w_l;
-		double k_theta = 1.0;
+		Double D_l, D_r, D_c;
+		float v, w, w_r, w_l;
+		float k_theta = 1.0f;
 
 		//37700
 		while (System.currentTimeMillis() - t0 <= 10000) {
@@ -151,27 +152,27 @@ public class ClientTest {
 				y_d = y_a;
 			}
 			
-			e_x = x_d - x;
-			e_y = y_d - y;
+			e_x = (float) (x_d - x);
+			e_y = (float) (y_d - y);
 			
-			theta_d = Math.atan2(e_y, e_x); // radianos
-			e_theta = theta_d - theta;
-			e_theta = Math.atan2(Math.sin(e_theta), Math.cos(e_theta));
+			theta_d = (float) (Math.atan2(e_y, e_x)); // radianos
+			e_theta = (float) (theta_d - theta);
+			e_theta = (float) (Math.atan2(Math.sin(e_theta), Math.cos(e_theta)));
 			
 			double value = ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
 					- Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))))
 					/ ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
 							+ Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
 			
-			v = 0.1 * value + 0.08;
+			v = (float) (0.1 * value + CONST_EQ);
 			
 			w = k_theta * e_theta;
 			
-			w_r = (2 * v + w * L) / (2 * r); // rad/s
-			w_r = w_r * RAD_TO_DEG;
+			w_r = (float) ((2 * v + w * L) / (2 * r)); // rad/s
+			w_r = (float) (w_r * RAD_TO_DEG);
 			
-			w_l = (2 * v - w * L) / (2 * r); // rad/s
-			w_l = w_l * RAD_TO_DEG;
+			w_l = (float) ((2 * v - w * L) / (2 * r)); // rad/s
+			w_l = (float) (w_l * RAD_TO_DEG);
 			
 			MOTOR_RIGTH.setSpeed((float) w_r);
 			MOTOR_RIGTH.forward();
