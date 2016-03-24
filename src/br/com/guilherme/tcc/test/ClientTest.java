@@ -9,6 +9,7 @@ import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.comm.Bluetooth;
 import lejos.nxt.comm.NXTConnection;
+import lejos.nxt.comm.RConsole;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
@@ -22,9 +23,9 @@ public class ClientTest {
 	public static final Double RAD_TO_DEG = (180 / Math.PI);
 	public static final Double L = 0.122; // tamanho do eixo das rodas do robô
 	public static final Double r = 0.0215; // raio da roda
-	public static final Double R = 0.2;
+	public static final Double R = 0.15;
 	public static final Double R_M = 0.22;
-	public static final Double CONST_EQ = 0.08;
+	public static final Double CONST_EQ = 0.1;
 
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
@@ -46,7 +47,8 @@ public class ClientTest {
 
 	// metodo principal
 	public static void main(String[] args) {
-		char controle = 0;
+		doControl();
+		/*char controle = 0;
 		boolean autoProcessed = false;
 
 		LCD.drawString("Esperando", 0, 0); 
@@ -73,6 +75,7 @@ public class ClientTest {
 				 System.out.println(e.getMessage().toString());
 			 }
 		}
+		*/
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
@@ -120,12 +123,15 @@ public class ClientTest {
 	
 	// metedo reponsavel por realizar o controle sobre o robo
 	public static void doControl() {
+		RConsole.open();
+		
+		
 		Long time = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		
-		Double x = 0.0d, y = 0.0d, theta = 0.0d;//(float) Math.PI;//// (float) Math.PI;//
+		Double x = 0.0d, y = 0.0d, theta = 0.0d;
 		float x_a = 0.6f, y_a = 0.6f;
 		
 		float e_x, e_y, e_theta, theta_d;
@@ -136,24 +142,37 @@ public class ClientTest {
 		float k_theta = 1.0f;
 
 		//37700
-		while (System.currentTimeMillis() - t0 <= 10000) {
+		while (System.currentTimeMillis() - t0 <= 18800) {
 
 			time = System.currentTimeMillis() - t0;
 			//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
 			
-			if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
+			//if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
 				//RConsole.println("if");
-				x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
+				//x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
 				//RConsole.println("x_d: "+x_d);
-				y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
+				//y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
 				//RConsole.println("y_d: "+y_d);
-			}else{
-				x_d = x_a;
-				y_d = y_a;
-			}
+			//}else{
+				//x_d = x_a;
+				//y_d = y_a;
+			//}
+			
+			//x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
+			//y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
+			x_d = x_a;
+			y_d = y_a;
 			
 			e_x = (float) (x_d - x);
+			//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
 			e_y = (float) (y_d - y);
+			//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y);
+			
+			if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.05){
+				MOTOR_RIGTH.stop();
+				MOTOR_LEFT.stop();
+				break;
+			}
 			
 			theta_d = (float) (Math.atan2(e_y, e_x)); // radianos
 			e_theta = (float) (theta_d - theta);
@@ -194,6 +213,8 @@ public class ClientTest {
 			y = y + (D_c * Math.sin(theta));
 			theta = (theta + ((D_r - D_l) / L));
 		}
+		
+		RConsole.close();
 	}
 
 	public static boolean checkIfPointBelongsCircumference(double x_d, double y_d, double x, double y) {
