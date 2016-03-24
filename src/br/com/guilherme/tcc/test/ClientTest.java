@@ -45,8 +45,7 @@ public class ClientTest {
 
 	// metodo principal
 	public static void main(String[] args) {
-		doControl();
-		/*char controle = 0;
+		char controle = 0;
 		boolean autoProcessed = false;
 
 		LCD.drawString("Esperando", 0, 0); 
@@ -73,7 +72,6 @@ public class ClientTest {
 				 System.out.println(e.getMessage().toString());
 			 }
 		}
-		*/
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
