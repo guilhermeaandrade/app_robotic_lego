@@ -1,19 +1,15 @@
 package br.com.guilherme.tcc.test;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import br.com.guilherme.tcc.utils.Position;
-import lejos.nxt.Button;
 import lejos.nxt.LCD;
 import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
-import lejos.nxt.comm.Bluetooth;
-import lejos.nxt.comm.NXTConnection;
 import lejos.nxt.comm.RConsole;
+import br.com.guilherme.tcc.utils.Position;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
@@ -49,7 +45,8 @@ public class ClientTest {
 
 	// metodo principal
 	public static void main(String[] args) {
-		char controle = 0;
+		doControl();
+		/*char controle = 0;
 		boolean autoProcessed = false;
 
 		LCD.drawString("Esperando", 0, 0); 
@@ -76,7 +73,7 @@ public class ClientTest {
 			 } catch (IOException e) {
 				 System.out.println(e.getMessage().toString());
 			 }
-		}
+		} */
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
@@ -123,7 +120,8 @@ public class ClientTest {
 	}
 	
 	// metedo reponsavel por realizar o controle sobre o robo
-	public static void doControl(DataInputStream in, DataOutputStream out) {
+	//public static void doControl(DataInputStream in, DataOutputStream out) {
+	public static void doControl() {
 		RConsole.open();
 		
 		List<Position> positions = new ArrayList<Position>();
@@ -149,21 +147,21 @@ public class ClientTest {
 			time = System.currentTimeMillis() - t0;
 			//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
 			
-			//if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
+			if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
 				//RConsole.println("if");
-				//x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
+				x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
 				//RConsole.println("x_d: "+x_d);
-				//y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
+				y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
 				//RConsole.println("y_d: "+y_d);
-			//}else{
-				//x_d = x_a;
-				//y_d = y_a;
-			//}
+			}else{
+				x_d = x_a;
+				y_d = y_a;
+			}
 			
 			//x_d = R * (Math.cos((CONST_FREQ * time.doubleValue())/1000)) + x_a;
 			//y_d = R * (Math.sin((CONST_FREQ * time.doubleValue())/1000)) + y_a;
-			x_d = x_a;
-			y_d = y_a;
+			//x_d = x_a;
+			//y_d = y_a;
 			
 			e_x = x_d - x;
 			//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
@@ -221,7 +219,7 @@ public class ClientTest {
 			theta = (theta + ((D_r - D_l) / L));
 		}
 		
-		
+		RConsole.println("array: "+positions.toString());
 		RConsole.close();
 	}
 
