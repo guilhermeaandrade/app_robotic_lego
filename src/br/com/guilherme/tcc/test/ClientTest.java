@@ -153,10 +153,10 @@ public class ClientTest {
 				//y_d = y_a;
 			//}
 			
-			x_d = R * (Math.cos((CONST_FREQ * time.doubleValue())/1000)) + x_a;
-			y_d = R * (Math.sin((CONST_FREQ * time.doubleValue())/1000)) + y_a;
-			//x_d = x_a;
-			//y_d = y_a;
+			//x_d = R * (Math.cos((CONST_FREQ * time.doubleValue())/1000)) + x_a;
+			//y_d = R * (Math.sin((CONST_FREQ * time.doubleValue())/1000)) + y_a;
+			x_d = x_a;
+			y_d = y_a;
 			
 			e_x = x_d - x;
 			//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
