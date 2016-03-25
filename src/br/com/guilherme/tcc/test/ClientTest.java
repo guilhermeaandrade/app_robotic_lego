@@ -64,10 +64,10 @@ public class ClientTest {
 				if(controle == 'm') {
 					executeMoveManul(in);
 				}
-				if(controle == 'u' && !autoProcessed) { 
+				/*if(controle == 'u' && !autoProcessed) { 
 					doControl();
 					autoProcessed = true;
-				}
+				}*/
 			 } catch (IOException e) {
 				 System.out.println(e.getMessage().toString());
 			 }
