@@ -1,8 +1,12 @@
 package br.com.guilherme.tcc.test;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import br.com.guilherme.tcc.utils.Position;
 import lejos.nxt.Button;
 import lejos.nxt.LCD;
 import lejos.nxt.Motor;
@@ -54,6 +58,7 @@ public class ClientTest {
 		conexao.setIOMode(NXTConnection.RAW);
 		// fluxo de entrada de dados
 		DataInputStream in = conexao.openDataInputStream();
+		DataOutputStream out = conexao.openDataOutputStream();
 		
 		LCD.clear(); // limpando e tela
 		LCD.drawString("Conectado", 0, 0);
@@ -64,10 +69,10 @@ public class ClientTest {
 				if(controle == 'm') {
 					executeMoveManul(in);
 				}
-				/*if(controle == 'u' && !autoProcessed) { 
-					doControl();
+				if(controle == 'u' && !autoProcessed) { 
+					doControl(in, out);
 					autoProcessed = true;
-				}*/
+				}
 			 } catch (IOException e) {
 				 System.out.println(e.getMessage().toString());
 			 }
@@ -118,8 +123,10 @@ public class ClientTest {
 	}
 	
 	// metedo reponsavel por realizar o controle sobre o robo
-	public static void doControl() {
+	public static void doControl(DataInputStream in, DataOutputStream out) {
 		RConsole.open();
+		
+		List<Position> positions = new ArrayList<Position>();
 		
 		Long time = new Long(0);
 		long prev_deg_r = 0;
@@ -164,6 +171,8 @@ public class ClientTest {
 			e_y = y_d - y;
 			//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y+"\n");
 			RConsole.println("y: "+y);
+			
+			positions.add(new Position(x, y));
 			
 			RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
 			if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.0205){
@@ -211,6 +220,7 @@ public class ClientTest {
 			y = y + (D_c * Math.sin(theta));
 			theta = (theta + ((D_r - D_l) / L));
 		}
+		
 		
 		RConsole.close();
 	}

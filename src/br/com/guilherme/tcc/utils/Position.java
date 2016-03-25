@@ -1,7 +1,11 @@
 package br.com.guilherme.tcc.utils;
 
-public class Position {
+import java.io.Serializable;
 
+public class Position implements Serializable{
+
+	private static final long serialVersionUID = 3478985022899129257L;
+	
 	private Double x;
 	private Double y;
 	
