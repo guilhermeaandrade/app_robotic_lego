@@ -1,6 +1,9 @@
 package br.com.guilherme.tcc.test;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,8 +57,8 @@ public class ClientTest {
 		// configurando a conxão para se comunicar com dispositivos móveis, como um celular Android
 		conexao.setIOMode(NXTConnection.RAW);
 		// fluxo de entrada de dados
-		DataInputStream in = conexao.openDataInputStream();
-		DataOutputStream out = conexao.openDataOutputStream();
+		DataInputStream dataIn = conexao.openDataInputStream();
+		DataOutputStream dataOut = conexao.openDataOutputStream();
 		
 		LCD.clear(); // limpando e tela
 		LCD.drawString("Conectado", 0, 0);
@@ -64,10 +67,10 @@ public class ClientTest {
 			try {
 				controle = in.readChar();
 				if(controle == 'm') {
-					executeMoveManul(in);
+					executeMoveManul(dataIn);
 				}
 				if(controle == 'u' && !autoProcessed) { 
-					doControl(in, out);
+					doControl(dataIn, dataOut);
 					autoProcessed = true;
 				}
 			 } catch (IOException e) {
@@ -126,13 +129,24 @@ public class ClientTest {
 		
 		List<Position> positions = new ArrayList<Position>();
 		
+		FileOutputStream out = null; // declare outside the try block
+	    File data = new File("data.txt");
+	    try {
+	    	out = new FileOutputStream(data);
+	      } catch(IOException e) {
+	      	System.err.println("Failed to create output stream");
+	      	System.exit(1);
+	      }
+	   
+	    DataOutputStream dataOut = new DataOutputStream(out);
+	   		
 		Long time = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		
 		Double x = 0.0, y = 0.0, theta = 0.0;
-		Double x_a = 0.3, y_a = 0.3;
+		Double x_a = 0.45, y_a = 0.45;
 		
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
@@ -157,6 +171,22 @@ public class ClientTest {
 				x_d = x_a;
 				y_d = y_a;
 			}
+			
+			try {
+				dataOut.writeDouble(x);
+				dataOut.flush();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			/*try {
+				dataOut.writeDouble(x);
+				dataOut.writeDouble(y);
+				dataOut.writeChar(35);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}*/
 			
 			//x_d = R * (Math.cos((CONST_FREQ * time.doubleValue())/1000)) + x_a;
 			//y_d = R * (Math.sin((CONST_FREQ * time.doubleValue())/1000)) + y_a;
@@ -218,8 +248,12 @@ public class ClientTest {
 			y = y + (D_c * Math.sin(theta));
 			theta = (theta + ((D_r - D_l) / L));
 		}
-		
-		RConsole.println("array: "+positions.toString());
+		try {
+			out.close();
+			//data.delete();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		RConsole.close();
 	}
 
