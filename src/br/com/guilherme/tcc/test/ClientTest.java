@@ -5,14 +5,11 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import lejos.nxt.LCD;
 import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.comm.RConsole;
-import br.com.guilherme.tcc.utils.Position;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
@@ -127,8 +124,6 @@ public class ClientTest {
 	public static void doControl() {
 		RConsole.open();
 		
-		List<Position> positions = new ArrayList<Position>();
-		
 		FileOutputStream out = null; // declare outside the try block
 	    File data = new File("data.txt");
 	    try {
@@ -146,7 +141,7 @@ public class ClientTest {
 		long t0 = System.currentTimeMillis();
 		
 		Double x = 0.0, y = 0.0, theta = 0.0;
-		Double x_a = 0.45, y_a = 0.45;
+		Double x_a = 0.6, y_a = 0.6;
 		
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
@@ -155,107 +150,87 @@ public class ClientTest {
 		float v, w, w_r, w_l;
 		float k_theta = 1.0f;
 
-		//37700
-		while (System.currentTimeMillis() - t0 <= 37700) {
-
-			time = System.currentTimeMillis() - t0;
-			//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
-			
-			if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
-				//RConsole.println("if");
-				x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
-				//RConsole.println("x_d: "+x_d);
-				y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
-				//RConsole.println("y_d: "+y_d);
-			}else{
-				x_d = x_a;
-				y_d = y_a;
-			}
-			
-			try {
-				dataOut.writeChars("String");
-				dataOut.writeBytes(x.toString());
-				//dataOut.writeDouble(x);
-				dataOut.flush();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			/*try {
-				dataOut.writeDouble(x);
-				dataOut.writeDouble(y);
-				dataOut.writeChar(35);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}*/
-			
-			//x_d = R * (Math.cos((CONST_FREQ * time.doubleValue())/1000)) + x_a;
-			//y_d = R * (Math.sin((CONST_FREQ * time.doubleValue())/1000)) + y_a;
-			//x_d = x_a;
-			//y_d = y_a;
-			
-			e_x = x_d - x;
-			//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
-			RConsole.println("x: "+x);
-			e_y = y_d - y;
-			//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y+"\n");
-			RConsole.println("y: "+y);
-			
-			positions.add(new Position(x, y));
-			
-			RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
-			if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.0205){
-				MOTOR_RIGTH.stop();
-				MOTOR_LEFT.stop();
-				break;
-			}
-			
-			theta_d = (Math.atan2(e_y, e_x)); // radianos
-			e_theta = (theta_d - theta);
-			e_theta = (Math.atan2(Math.sin(e_theta), Math.cos(e_theta)));
-			
-			double value = ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-					- Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))))
-					/ ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-							+ Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
-			
-			v = (float) (0.1 * value + CONST_EQ);
-			
-			w = (float) (k_theta * e_theta);
-			
-			w_r = (float) ((2 * v + w * L) / (2 * r)); // rad/s
-			w_r = (float) (w_r * RAD_TO_DEG);
-			
-			w_l = (float) ((2 * v - w * L) / (2 * r)); // rad/s
-			w_l = (float) (w_l * RAD_TO_DEG);
-			
-			MOTOR_RIGTH.setSpeed((float) w_r);
-			MOTOR_RIGTH.forward();
-
-			MOTOR_LEFT.setSpeed((float) w_l);
-			MOTOR_LEFT.forward();
-
-			long deg_r = MOTOR_RIGTH.getTachoCount() - prev_deg_r;
-			prev_deg_r = MOTOR_RIGTH.getTachoCount();
-			
-			long deg_l = MOTOR_LEFT.getTachoCount() - prev_deg_l;
-			prev_deg_l = MOTOR_LEFT.getTachoCount();
-			
-			D_r = ((2 * Math.PI * r * deg_r) / 360);
-			D_l = ((2 * Math.PI * r * deg_l) / 360);
-			D_c = (D_r + D_l) / 2;
-			
-			x = x + (D_c * Math.cos(theta));
-			y = y + (D_c * Math.sin(theta));
-			theta = (theta + ((D_r - D_l) / L));
-		}
 		try {
+			dataOut.writeChars("x,y\r\n");
+			while (System.currentTimeMillis() - t0 <= 37700) {
+
+				time = System.currentTimeMillis() - t0;
+				//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
+				
+				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
+					//RConsole.println("if");
+					x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
+					//RConsole.println("x_d: "+x_d);
+					y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
+					//RConsole.println("y_d: "+y_d);
+				}else{
+					x_d = x_a;
+					y_d = y_a;
+				}
+			
+				dataOut.writeChars(x.toString()+","+y.toString()+"\r\n");
+				
+				e_x = x_d - x;
+				//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
+				RConsole.println("x: "+x);
+				e_y = y_d - y;
+				//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y+"\n");
+				RConsole.println("y: "+y);
+		
+				RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
+				if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.0205){
+					MOTOR_RIGTH.stop();
+					MOTOR_LEFT.stop();
+					break;
+				}
+				
+				theta_d = (Math.atan2(e_y, e_x)); // radianos
+				e_theta = (theta_d - theta);
+				e_theta = (Math.atan2(Math.sin(e_theta), Math.cos(e_theta)));
+				
+				double value = ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+						- Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))))
+						/ ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+								+ Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
+				
+				v = (float) (0.1 * value + CONST_EQ);
+				
+				w = (float) (k_theta * e_theta);
+				
+				w_r = (float) ((2 * v + w * L) / (2 * r)); // rad/s
+				w_r = (float) (w_r * RAD_TO_DEG);
+				
+				w_l = (float) ((2 * v - w * L) / (2 * r)); // rad/s
+				w_l = (float) (w_l * RAD_TO_DEG);
+				
+				MOTOR_RIGTH.setSpeed((float) w_r);
+				MOTOR_RIGTH.forward();
+
+				MOTOR_LEFT.setSpeed((float) w_l);
+				MOTOR_LEFT.forward();
+
+				long deg_r = MOTOR_RIGTH.getTachoCount() - prev_deg_r;
+				prev_deg_r = MOTOR_RIGTH.getTachoCount();
+				
+				long deg_l = MOTOR_LEFT.getTachoCount() - prev_deg_l;
+				prev_deg_l = MOTOR_LEFT.getTachoCount();
+				
+				D_r = ((2 * Math.PI * r * deg_r) / 360);
+				D_l = ((2 * Math.PI * r * deg_l) / 360);
+				D_c = (D_r + D_l) / 2;
+				
+				x = x + (D_c * Math.cos(theta));
+				y = y + (D_c * Math.sin(theta));
+				theta = (theta + ((D_r - D_l) / L));
+			}
+			
+			dataOut.flush();
 			out.close();
-			//data.delete();
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 		RConsole.close();
 	}
 
