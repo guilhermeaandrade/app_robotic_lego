@@ -173,7 +173,9 @@ public class ClientTest {
 			}
 			
 			try {
-				dataOut.writeDouble(x);
+				dataOut.writeChars("String");
+				dataOut.writeBytes(x.toString());
+				//dataOut.writeDouble(x);
 				dataOut.flush();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
