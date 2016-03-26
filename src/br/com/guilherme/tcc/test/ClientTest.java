@@ -156,7 +156,7 @@ public class ClientTest {
 
 				time = System.currentTimeMillis() - t0;
 				//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
-				
+				/*
 				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
 					//RConsole.println("if");
 					x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
@@ -166,9 +166,12 @@ public class ClientTest {
 				}else{
 					x_d = x_a;
 					y_d = y_a;
-				}
+				}*/
+				
+				x_d = x_a;
+				y_d = y_a;
 			
-				dataOut.writeChars(x.toString()+","+y.toString()+"\r\n");
+				dataOut.writeChars(x.toString().trim()+","+y.toString().trim()+"\r\n");
 				
 				e_x = x_d - x;
 				//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
