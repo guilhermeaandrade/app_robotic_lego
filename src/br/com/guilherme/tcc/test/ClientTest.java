@@ -6,9 +6,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import lejos.nxt.Button;
 import lejos.nxt.LCD;
 import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
+import lejos.nxt.comm.Bluetooth;
+import lejos.nxt.comm.NXTConnection;
 import lejos.nxt.comm.RConsole;
 
 public class ClientTest {
@@ -45,8 +48,7 @@ public class ClientTest {
 
 	// metodo principal
 	public static void main(String[] args) {
-		doControl();
-		/*char controle = 0;
+		char controle = 0;
 		boolean autoProcessed = false;
 
 		LCD.drawString("Esperando", 0, 0); 
@@ -62,18 +64,19 @@ public class ClientTest {
 		
 		while (!Button.ESCAPE.isDown()) {
 			try {
-				controle = in.readChar();
+				controle = dataIn.readChar();
 				if(controle == 'm') {
 					executeMoveManul(dataIn);
 				}
 				if(controle == 'u' && !autoProcessed) { 
-					doControl(dataIn, dataOut);
+					dataOut.writeDouble(10.35);
+					//doControl(dataOut);
 					autoProcessed = true;
 				}
 			 } catch (IOException e) {
 				 System.out.println(e.getMessage().toString());
 			 }
-		} */
+		} 
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
@@ -121,7 +124,7 @@ public class ClientTest {
 	
 	// metedo reponsavel por realizar o controle sobre o robo
 	//public static void doControl(DataInputStream in, DataOutputStream out) {
-	public static void doControl() {
+	public static void doControl(DataOutputStream dataOut) {
 		RConsole.open();
 		
 		FileOutputStream out = null; // declare outside the try block
@@ -133,8 +136,8 @@ public class ClientTest {
 	      	System.exit(1);
 	      }
 	   
-	    DataOutputStream dataOut = new DataOutputStream(out);
-	   		
+	    dataOut = new DataOutputStream(out);	
+	    
 		Long time = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
@@ -156,7 +159,7 @@ public class ClientTest {
 
 				time = System.currentTimeMillis() - t0;
 				//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
-				/*
+				
 				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
 					//RConsole.println("if");
 					x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
@@ -166,11 +169,8 @@ public class ClientTest {
 				}else{
 					x_d = x_a;
 					y_d = y_a;
-				}*/
+				}
 				
-				x_d = x_a;
-				y_d = y_a;
-			
 				dataOut.writeChars(x.toString().trim()+","+y.toString().trim()+"\r\n");
 				
 				e_x = x_d - x;

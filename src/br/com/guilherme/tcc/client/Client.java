@@ -1,14 +1,23 @@
 package br.com.guilherme.tcc.client;
 
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import lejos.nxt.Button;
+import lejos.nxt.LCD;
 import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
+import lejos.nxt.comm.Bluetooth;
+import lejos.nxt.comm.NXTConnection;
+import lejos.nxt.comm.RConsole;
 
 public class Client {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
-	// private static int tConnection; //1-manual control, 2- automatic control
-	// private static DataInputStream entradaDeDados;
-	// private static DataOutputStream saidaDeDados;
-
+	
 	// DEFINIÇÃO DE VARIÁVEIS UTILIZADAS PARA AÇÕES DE CONTROLE
 	public static final long MS_20 = 100;
 	public static final NXTRegulatedMotor MOTOR_RIGTH = Motor.B;
@@ -16,9 +25,12 @@ public class Client {
 	public static final Integer SPEED = 30;
 	public static final Double DEG_TO_RAD = (Math.PI / 180);
 	public static final Double RAD_TO_DEG = (180 / Math.PI);
-	public static final Double L = 0.122; // tamanho do eixo das rodas do robô
+	public static final Double L = 0.1218; // tamanho do eixo das rodas do robô
 	public static final Double r = 0.0215; // raio da roda
-	public static final Float R = 0.15f;
+	public static final Double R = 0.05;
+	public static final Double R_M = 0.22;
+	public static final Double CONST_EQ = 0.0878;
+	public static final Double CONST_FREQ = 0.3;
 
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
@@ -35,140 +47,36 @@ public class Client {
 	public static final char MANUAL_CONTROL = 'm';
 	public static final char AUTO_CONTROL = 'u';
 
-	// DEFINIÇÃO DE VARIÁVEIS UTILIZADAS PARA ESCREVER EM UM ARQUIVO
-	// private static ManagerCSVFiles manager;
-
 	// metodo principal
 	public static void main(String[] args) {
-		doControl();
+		char controle = 0;
+		boolean autoProcessed = false;
 
-		// LCD.drawString("Esperando", 0, 0); // escrevendo na tela
-		// // Classe de conexão que proporciona acesso ao padrão E/S e esperando
-		// por uma conexão
-		// NXTConnection conexao = Bluetooth.waitForConnection();
-		// // configurando a conxão para se comunicar com dispositivos móveis,
-		// como um celular Android
-		// conexao.setIOMode(NXTConnection.RAW);
-		// // fluxo de entrada de dados
-		// DataInputStream in = conexao.openDataInputStream();
-		//
-		// LCD.clear(); // limpando e tela
-		// LCD.drawString("Conectado", 0, 0);
-		//
-		// char i = 0;
-		// byte j = 0;
-		//
-		// // o loop será finalizado quando o botão escape do nxt for
-		// pressionado
-		// RConsole.printlnln("Start while loop ");
-		// while (!Button.ESCAPE.isDown()) {
-		//
-		// try {
-		//
-		// i = in.readChar(); // leitura do caracter representando a direção
-		// j = in.readByte(); // leitura do byte representando a velocidade
-		//
-		// LCD.clear();
-		//
-		// } catch (IOException e) {
-		// // TODO Auto-generated catch block
-		// e.printlnStackTrace();
-		// }
-		//
-		// // imprimindo o valor recebido na tela, apenas usado para teste
-		// iniciais
-		// //System.out.println(i + ", " + j);
-		// RConsole.println(i + ", " + j);
-		//
-		// // chamada do método que execultara a movimentação do robô
-		// performMove(i, j);
-		// }
-		// RConsole.printlnln("\n done ");
-		// RConsole.close();
-
-		/*
-		 * char typeConnection = 0 ; // m - manual control, u - automatic
-		 * control char direction = 0; char letra = 0; Byte speed = 0;
-		 * LCD.clear(); LCD.drawString("Esperando..", 0, 0); LCD.refresh();
-		 * 
-		 * // Espera por uma conexão do dispositivo móvel NXTConnection
-		 * connectionWithDevice = Bluetooth.waitForConnection(); // seta o modo
-		 * de comunicação -> especificamente comunincação com // dispositivos
-		 * móveis connectionWithDevice.setIOMode(NXTConnection.RAW);
-		 * 
-		 * entradaDeDados = connectionWithDevice.openDataInputStream(); // dados
-		 * que chegam // saidaDeDados =
-		 * connectionWithDevice.openDataOutputStream(); //dados que saem
-		 * if(connectionWithDevice != null){ LCD.clear();
-		 * LCD.drawString("Conectado", 0, 0); }
-		 * 
-		 * while(!Button.ESCAPE.isDown()){ try { letra =
-		 * entradaDeDados.readChar(); speed = entradaDeDados.readByte();
-		 * 
-		 * //difine typeConnection or direction if(letra == 'm' || letra ==
-		 * 'u'){ typeConnection = letra; }else{ direction = letra; }
-		 * 
-		 * LCD.clear(); LCD.drawString(String.valueOf(letra), 0, 0);
-		 * LCD.drawString(speed.toString(), 0, 1); } catch (IOException e) {
-		 * LCD.drawString(e.getMessage(), 0, 0); } if(typeConnection == 'u')
-		 * doControl(); performMove(direction, speed);
-		 * 
-		 * }
-		 */
-
-		/*
-		 * LCD.clear(); LCD.drawString("Esperando", 0, 0); // escrevendo na tela
-		 * LCD.refresh();
-		 * 
-		 * char direcao = 0; byte velocidade = 0;
-		 * 
-		 * BTConnection conexaoWithLego = Bluetooth.waitForConnection();
-		 * DataInputStream entradaDeDados = null; DataOutputStream saidaDeDados
-		 * = null; while(!Button.ESCAPE.isDown()){ try { if(conexaoWithLego ==
-		 * null){ throw new IOException("Falha de Conexao"); } LCD.clear();
-		 * LCD.drawString("Conectado", 0, 0);
-		 * 
-		 * entradaDeDados = conexaoWithLego.openDataInputStream(); saidaDeDados
-		 * = conexaoWithLego.openDataOutputStream();
-		 * 
-		 * direcao = entradaDeDados.readChar(); velocidade =
-		 * entradaDeDados.readByte();
-		 * 
-		 * } catch (Exception e) { LCD.clear(); LCD.drawString(
-		 * "Falha de Comunicacao", 0, 0); LCD.drawString(e.getMessage(), 2, 0);
-		 * LCD.refresh(); } performMove(direcao, velocidade); }
-		 */
-
-		/*
-		 * char typeConnection; //m - manual control, u - automatic control char
-		 * direcao = 0; byte velocidade = 0;
-		 * 
-		 * LCD.clear(); LCD.drawString("Esperando", 0, 0); // escrevendo na tela
-		 * LCD.refresh();
-		 * 
-		 * BTConnection conexaoWithLego = Bluetooth.waitForConnection();
-		 * DataInputStream entradaDeDados = null;
-		 * 
-		 * try { if(conexaoWithLego == null) throw new IOException(
-		 * "Falha de Conexão"); LCD.clear(); LCD.drawString("Connected", 0, 0);
-		 * } catch (Exception e) { LCD.clear(); LCD.drawString(
-		 * "Falha de Comunicacao", 0, 0); LCD.drawString(e.getMessage(), 2, 0);
-		 * LCD.refresh(); }
-		 * 
-		 * /*while(true){ try { if(conexaoWithLego == null) throw new
-		 * IOException("Falha de Conexão"); LCD.clear();
-		 * LCD.drawString("Connected", 0, 0);
-		 * 
-		 * entradaDeDados = conexaoWithLego.openDataInputStream();
-		 * typeConnection = entradaDeDados.readChar(); if(typeConnection ==
-		 * 'u'){ tConnection = 2; doControl(); }else if(typeConnection == 'm'){
-		 * tConnection = 1; direcao = entradaDeDados.readChar(); velocidade =
-		 * entradaDeDados.readByte();
-		 * 
-		 * performMove(direcao, velocidade); } } catch (Exception e) {
-		 * LCD.clear(); LCD.drawString("Falha de Comunicacao", 0, 0);
-		 * LCD.drawString(e.getMessage(), 2, 0); LCD.refresh(); } }
-		 */
+		LCD.drawString("Esperando", 0, 0); 
+		NXTConnection conexao = Bluetooth.waitForConnection(); 
+		// configurando a conxão para se comunicar com dispositivos móveis, como um celular Android
+		conexao.setIOMode(NXTConnection.RAW);
+		// fluxo de entrada de dados
+		DataInputStream dataIn = conexao.openDataInputStream();
+		DataOutputStream dataOut = conexao.openDataOutputStream();
+		
+		LCD.clear(); // limpando e tela
+		LCD.drawString("Conectado", 0, 0);
+		
+		while (!Button.ESCAPE.isDown()) {
+			try {
+				controle = dataIn.readChar();
+				if(controle == 'm') {
+					executeMoveManul(dataIn);
+				}
+				if(controle == 'u' && !autoProcessed) { 
+					doControl(dataOut);
+					autoProcessed = true;
+				}
+			 } catch (IOException e) {
+				 System.out.println(e.getMessage().toString());
+			 }
+		} 
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
@@ -199,88 +107,139 @@ public class Client {
 			break;
 		}
 	}
-
+	
+	// metodo responsavel por realizar movimento manual
+	public static void executeMoveManul(DataInputStream in){
+		char letra = 0;
+		byte speed = 0;
+		try {
+			letra = in.readChar();
+			speed = in.readByte();
+			LCD.clear();
+		} catch (IOException e) {
+			e.getMessage();
+		}
+		performMove(letra, speed);
+	}
 	
 	// metedo reponsavel por realizar o controle sobre o robo
-	public static void doControl() {
+	//public static void doControl(DataInputStream in, DataOutputStream out) {
+	public static void doControl(DataOutputStream dataOut) {
+		RConsole.open();
+		
+		FileOutputStream out = null; // declare outside the try block
+	    File data = new File("data.txt");
+	    try {
+	    	out = new FileOutputStream(data);
+	      } catch(IOException e) {
+	      	System.err.println("Failed to create output stream");
+	      	System.exit(1);
+	      }
+	   
+	    dataOut = new DataOutputStream(out);	
+	    
 		Long time = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		
-		float x = 0.0f, y = 0.0f, theta = 0.0f;//(float) Math.PI;//// (float) Math.PI;//
-		float x_a = 0.35f, y_a = 0.35f;
+		Double x = 0.0, y = 0.0, theta = 0.0;
+		Double x_a = 0.6, y_a = 0.6;
 		
-		float e_x, e_y, e_theta, theta_d;
-		float x_d = 0.0f, y_d = 0.0f;
+		Double e_x, e_y, e_theta, theta_d;
+		Double x_d = 0.0, y_d = 0.0;
 		
-		float D_l, D_r, D_c;
+		Double D_l, D_r, D_c;
 		float v, w, w_r, w_l;
-		float k_theta = 1;
+		float k_theta = 1.0f;
 
-		while (System.currentTimeMillis() - t0 <= 37700) {
+		try {
+			dataOut.writeChars("x,y\r\n");
+			while (System.currentTimeMillis() - t0 <= 37700) {
 
-			time = System.currentTimeMillis() - t0;
-			
-			x_d = (float) (0.15 * (Math.cos(((1/2) * time)/1000)) + x_a); 
-			y_d = (float) (0.15 * (Math.sin(((1/2) * time)/1000)) + y_a);
-			//x_d = 0.4f;
-			//y_d = 0.85f;
-			
-			e_x = x_d - x;
-			e_y = y_d - y;
-			
-//			if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) <= 0.05){
-//				MOTOR_RIGTH.stop();
-//				MOTOR_LEFT.stop();
-//				break;
-//			}
-			
-			theta_d = (float) Math.atan2(e_y, e_x); // radianos
-			e_theta = theta_d - theta;
-			e_theta = (float) Math.atan2(Math.sin(e_theta), Math.cos(e_theta));
-			
-			double value = ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-					- Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))))
-					/ ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-							+ Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
-			
-			v = (float) (0.1 * value + 0.1);
-			
-			w = k_theta * e_theta;
-			
-			w_r = (float) ((2 * v + w * L) / (2 * r)); // rad/s
-			w_r = (float) (w_r * RAD_TO_DEG);
-			
-			w_l = (float) ((2 * v - w * L) / (2 * r)); // rad/s
-			w_l = (float) (w_l * RAD_TO_DEG);
-			
-			MOTOR_RIGTH.setSpeed(w_r);
-			MOTOR_RIGTH.forward();
+				time = System.currentTimeMillis() - t0;
+				//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
+				
+				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
+					//RConsole.println("if");
+					x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
+					//RConsole.println("x_d: "+x_d);
+					y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
+					//RConsole.println("y_d: "+y_d);
+				}else{
+					x_d = x_a;
+					y_d = y_a;
+				}
+				
+				dataOut.writeChars(x.toString().trim()+","+y.toString().trim()+"\r\n");
+				
+				e_x = x_d - x;
+				//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
+				RConsole.println("x: "+x);
+				e_y = y_d - y;
+				//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y+"\n");
+				RConsole.println("y: "+y);
+		
+				RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
+				if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.0205){
+					MOTOR_RIGTH.stop();
+					MOTOR_LEFT.stop();
+					break;
+				}
+				
+				theta_d = (Math.atan2(e_y, e_x)); // radianos
+				e_theta = (theta_d - theta);
+				e_theta = (Math.atan2(Math.sin(e_theta), Math.cos(e_theta)));
+				
+				double value = ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+						- Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))))
+						/ ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+								+ Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
+				
+				v = (float) (0.1 * value + CONST_EQ);
+				
+				w = (float) (k_theta * e_theta);
+				
+				w_r = (float) ((2 * v + w * L) / (2 * r)); // rad/s
+				w_r = (float) (w_r * RAD_TO_DEG);
+				
+				w_l = (float) ((2 * v - w * L) / (2 * r)); // rad/s
+				w_l = (float) (w_l * RAD_TO_DEG);
+				
+				MOTOR_RIGTH.setSpeed((float) w_r);
+				MOTOR_RIGTH.forward();
 
-			MOTOR_LEFT.setSpeed(w_l);
-			MOTOR_LEFT.forward();
+				MOTOR_LEFT.setSpeed((float) w_l);
+				MOTOR_LEFT.forward();
 
-			long deg_r = MOTOR_RIGTH.getTachoCount() - prev_deg_r;
-			prev_deg_r = MOTOR_RIGTH.getTachoCount();
+				long deg_r = MOTOR_RIGTH.getTachoCount() - prev_deg_r;
+				prev_deg_r = MOTOR_RIGTH.getTachoCount();
+				
+				long deg_l = MOTOR_LEFT.getTachoCount() - prev_deg_l;
+				prev_deg_l = MOTOR_LEFT.getTachoCount();
+				
+				D_r = ((2 * Math.PI * r * deg_r) / 360);
+				D_l = ((2 * Math.PI * r * deg_l) / 360);
+				D_c = (D_r + D_l) / 2;
+				
+				x = x + (D_c * Math.cos(theta));
+				y = y + (D_c * Math.sin(theta));
+				theta = (theta + ((D_r - D_l) / L));
+			}
 			
-			long deg_l = MOTOR_LEFT.getTachoCount() - prev_deg_l;
-			prev_deg_l = MOTOR_LEFT.getTachoCount();
-			
-			D_r = (float) ((2 * Math.PI * r * deg_r) / 360);
-			D_l = (float) ((2 * Math.PI * r * deg_l) / 360);
-			D_c = (D_r + D_l) / 2;
-			
-			x = (float) (x + (D_c * Math.cos(theta)));
-			y = (float) (y + (D_c * Math.sin(theta)));
-			theta = (float) (theta + ((D_r - D_l) / L));
+			dataOut.flush();
+			out.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		//RConsole.close();
+		
+		RConsole.close();
 	}
 
-	public static boolean checkIfPointBelongsCircumference(float x_d, float y_d, float x, float y) {
+	public static boolean checkIfPointBelongsCircumference(double x_d, double y_d, double x, double y) {
 		float distance = (float) Math.sqrt(Math.pow((x - x_d), 2) + Math.pow((y - y_d), 2));
-		if (distance >= R)
+		if (distance > R && distance <= R_M)
 			return true;
 		return false;
 	}
