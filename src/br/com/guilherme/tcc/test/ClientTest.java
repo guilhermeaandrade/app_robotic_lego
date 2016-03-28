@@ -2,8 +2,6 @@ package br.com.guilherme.tcc.test;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 import lejos.nxt.Button;
@@ -69,14 +67,13 @@ public class ClientTest {
 					executeMoveManul(dataIn);
 				}
 				if(controle == 'u' && !autoProcessed) { 
-					dataOut.writeDouble(10.35);
-					//doControl(dataOut);
+					doControl(dataOut);
 					autoProcessed = true;
 				}
 			 } catch (IOException e) {
 				 System.out.println(e.getMessage().toString());
 			 }
-		} 
+		}
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
@@ -125,8 +122,7 @@ public class ClientTest {
 	// metedo reponsavel por realizar o controle sobre o robo
 	//public static void doControl(DataInputStream in, DataOutputStream out) {
 	public static void doControl(DataOutputStream dataOut) {
-		RConsole.open();
-		
+		/*
 		FileOutputStream out = null; // declare outside the try block
 	    File data = new File("data.txt");
 	    try {
@@ -137,14 +133,17 @@ public class ClientTest {
 	      }
 	   
 	    dataOut = new DataOutputStream(out);	
-	    
+	    */
+		
+		String position = null;
+		byte[] pos = null;
 		Long time = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		
 		Double x = 0.0, y = 0.0, theta = 0.0;
-		Double x_a = 0.6, y_a = 0.6;
+		Double x_a = 0.3, y_a = 0.3;
 		
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
@@ -154,12 +153,12 @@ public class ClientTest {
 		float k_theta = 1.0f;
 
 		try {
-			dataOut.writeChars("x,y\r\n");
 			while (System.currentTimeMillis() - t0 <= 37700) {
 
 				time = System.currentTimeMillis() - t0;
 				//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
 				
+				/*
 				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
 					//RConsole.println("if");
 					x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
@@ -169,9 +168,15 @@ public class ClientTest {
 				}else{
 					x_d = x_a;
 					y_d = y_a;
-				}
+				}*/
 				
-				dataOut.writeChars(x.toString().trim()+","+y.toString().trim()+"\r\n");
+				x_d = x_a;
+				y_d = y_a;
+				
+				position = x+","+y;
+				pos = position.getBytes();
+				dataOut.write(pos);
+				dataOut.flush();
 				
 				e_x = x_d - x;
 				//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
@@ -226,15 +231,10 @@ public class ClientTest {
 				y = y + (D_c * Math.sin(theta));
 				theta = (theta + ((D_r - D_l) / L));
 			}
-			
 			dataOut.flush();
-			out.close();
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		RConsole.close();
 	}
 
 	public static boolean checkIfPointBelongsCircumference(double x_d, double y_d, double x, double y) {
