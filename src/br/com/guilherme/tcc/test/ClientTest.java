@@ -2,6 +2,8 @@ package br.com.guilherme.tcc.test;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import lejos.nxt.Button;
@@ -10,7 +12,6 @@ import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.comm.Bluetooth;
 import lejos.nxt.comm.NXTConnection;
-import lejos.nxt.comm.RConsole;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
@@ -28,7 +29,9 @@ public class ClientTest {
 	public static final Double R_M = 0.22;
 	public static final Double CONST_EQ = 0.0878;
 	public static final Double CONST_FREQ = 0.3;
-
+	public static final String FIM = "fim";
+	public static final int NUMBER_DECIMAL = 7;
+	
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
 	// x^2 + y^2 - 2ax - 2by + a^2 + b^2 - r^2 = 0 -> equação geral
@@ -46,6 +49,8 @@ public class ClientTest {
 
 	// metodo principal
 	public static void main(String[] args) {
+		doControl();
+		/*
 		char controle = 0;
 		boolean autoProcessed = false;
 
@@ -64,16 +69,18 @@ public class ClientTest {
 			try {
 				controle = dataIn.readChar();
 				if(controle == 'm') {
+					LCD.drawString("Controle Manual", 0, 1);
 					executeMoveManul(dataIn);
 				}
 				if(controle == 'u' && !autoProcessed) { 
+					LCD.drawString("Controle Automatico", 0, 1);
 					doControl(dataOut);
 					autoProcessed = true;
 				}
 			 } catch (IOException e) {
 				 System.out.println(e.getMessage().toString());
 			 }
-		}
+		}*/
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
@@ -120,20 +127,34 @@ public class ClientTest {
 	}
 	
 	// metedo reponsavel por realizar o controle sobre o robo
-	//public static void doControl(DataInputStream in, DataOutputStream out) {
-	public static void doControl(DataOutputStream dataOut) {
-		/*
+	public static void doControl() {
+	//public static void doControl(DataOutputStream dataOut) {
+		
 		FileOutputStream out = null; // declare outside the try block
-	    File data = new File("data.txt");
+	    File data = null;
+	    String content = "This is the text context";
 	    try {
+	    	data = new File("data.txt");
 	    	out = new FileOutputStream(data);
+	    	
+	    	if(!data.exists()) data.createNewFile();
+	    	byte[] contentBytes = content.getBytes();
+	    	
+	    	out.write(contentBytes);
+	    	out.flush();
+	    	out.close();
+	    	
 	      } catch(IOException e) {
 	      	System.err.println("Failed to create output stream");
 	      	System.exit(1);
+	      } finally{
+	    	  try {
+					if(out != null) out.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 	      }
-	   
-	    dataOut = new DataOutputStream(out);	
-	    */
+		
 		
 		String position = null;
 		byte[] pos = null;
@@ -152,12 +173,10 @@ public class ClientTest {
 		float v, w, w_r, w_l;
 		float k_theta = 1.0f;
 
-		try {
+		//try {
 			while (System.currentTimeMillis() - t0 <= 37700) {
 
 				time = System.currentTimeMillis() - t0;
-				//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
-				
 				/*
 				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
 					//RConsole.println("if");
@@ -173,19 +192,14 @@ public class ClientTest {
 				x_d = x_a;
 				y_d = y_a;
 				
-				position = x+","+y;
-				pos = position.getBytes();
-				dataOut.write(pos);
-				dataOut.flush();
-				
 				e_x = x_d - x;
 				//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
-				RConsole.println("x: "+x);
+				//RConsole.println("x: "+x);
 				e_y = y_d - y;
 				//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y+"\n");
-				RConsole.println("y: "+y);
+				//RConsole.println("y: "+y);
 		
-				RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
+				//RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
 				if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.0205){
 					MOTOR_RIGTH.stop();
 					MOTOR_LEFT.stop();
@@ -227,14 +241,23 @@ public class ClientTest {
 				D_l = ((2 * Math.PI * r * deg_l) / 360);
 				D_c = (D_r + D_l) / 2;
 				
+				position = round(x) + "," + round(y) + "," + round(theta) + "," + round(v) + "," + round(w) + "," + round((Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2))));
+				pos = position.getBytes();
+				//dataOut.write(pos);
+				//dataOut.flush();
+				
 				x = x + (D_c * Math.cos(theta));
 				y = y + (D_c * Math.sin(theta));
 				theta = (theta + ((D_r - D_l) / L));
 			}
-			dataOut.flush();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+			
+			pos = FIM.getBytes();
+			//dataOut.write(pos);
+			//dataOut.flush();
+			 
+		//} catch (IOException e) {
+			//e.printStackTrace();
+		//}
 	}
 
 	public static boolean checkIfPointBelongsCircumference(double x_d, double y_d, double x, double y) {
@@ -242,5 +265,12 @@ public class ClientTest {
 		if (distance > R && distance <= R_M)
 			return true;
 		return false;
+	}
+	
+	public static double round(double value) {
+	    long factor = (long) Math.pow(10, NUMBER_DECIMAL);
+	    value = value * factor;
+	    long tmp = Math.round(value);
+	    return (double) tmp / factor;
 	}
 }

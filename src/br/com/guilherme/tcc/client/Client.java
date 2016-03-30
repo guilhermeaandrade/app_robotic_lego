@@ -1,10 +1,7 @@
 package br.com.guilherme.tcc.client;
 
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 import lejos.nxt.Button;
@@ -13,7 +10,6 @@ import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.comm.Bluetooth;
 import lejos.nxt.comm.NXTConnection;
-import lejos.nxt.comm.RConsole;
 
 public class Client {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
@@ -31,7 +27,9 @@ public class Client {
 	public static final Double R_M = 0.22;
 	public static final Double CONST_EQ = 0.0878;
 	public static final Double CONST_FREQ = 0.3;
-
+	public static final String FIM = "fim";
+	public static final int NUMBER_DECIMAL = 7;
+	
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
 	// x^2 + y^2 - 2ax - 2by + a^2 + b^2 - r^2 = 0 -> equação geral
@@ -67,16 +65,18 @@ public class Client {
 			try {
 				controle = dataIn.readChar();
 				if(controle == 'm') {
+					LCD.drawString("Controle Manual", 0, 1);
 					executeMoveManul(dataIn);
 				}
 				if(controle == 'u' && !autoProcessed) { 
+					LCD.drawString("Controle Automatico", 0, 1);
 					doControl(dataOut);
 					autoProcessed = true;
 				}
 			 } catch (IOException e) {
 				 System.out.println(e.getMessage().toString());
 			 }
-		} 
+		}
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
@@ -123,28 +123,18 @@ public class Client {
 	}
 	
 	// metedo reponsavel por realizar o controle sobre o robo
-	//public static void doControl(DataInputStream in, DataOutputStream out) {
+	//public static void doControl() {
 	public static void doControl(DataOutputStream dataOut) {
-		RConsole.open();
 		
-		FileOutputStream out = null; // declare outside the try block
-	    File data = new File("data.txt");
-	    try {
-	    	out = new FileOutputStream(data);
-	      } catch(IOException e) {
-	      	System.err.println("Failed to create output stream");
-	      	System.exit(1);
-	      }
-	   
-	    dataOut = new DataOutputStream(out);	
-	    
+		String position = null;
+		byte[] pos = null;
 		Long time = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		
 		Double x = 0.0, y = 0.0, theta = 0.0;
-		Double x_a = 0.6, y_a = 0.6;
+		Double x_a = 0.3, y_a = 0.3;
 		
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
@@ -154,12 +144,10 @@ public class Client {
 		float k_theta = 1.0f;
 
 		try {
-			dataOut.writeChars("x,y\r\n");
 			while (System.currentTimeMillis() - t0 <= 37700) {
 
 				time = System.currentTimeMillis() - t0;
-				//RConsole.println("Time: " + time.doubleValue() + " | Den " + Double.valueOf(0.5) * time.doubleValue() + " | " + (Double.valueOf(0.5) * time.doubleValue())/1000);
-				
+				/*
 				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
 					//RConsole.println("if");
 					x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
@@ -169,18 +157,19 @@ public class Client {
 				}else{
 					x_d = x_a;
 					y_d = y_a;
-				}
+				}*/
 				
-				dataOut.writeChars(x.toString().trim()+","+y.toString().trim()+"\r\n");
+				x_d = x_a;
+				y_d = y_a;
 				
 				e_x = x_d - x;
 				//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
-				RConsole.println("x: "+x);
+				//RConsole.println("x: "+x);
 				e_y = y_d - y;
 				//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y+"\n");
-				RConsole.println("y: "+y);
+				//RConsole.println("y: "+y);
 		
-				RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
+				//RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
 				if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.0205){
 					MOTOR_RIGTH.stop();
 					MOTOR_LEFT.stop();
@@ -222,19 +211,23 @@ public class Client {
 				D_l = ((2 * Math.PI * r * deg_l) / 360);
 				D_c = (D_r + D_l) / 2;
 				
+				position = round(x) + "," + round(y) + "," + round(theta) + "," + round(v) + "," + round(w) + "," + round((Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2))));
+				pos = position.getBytes();
+				dataOut.write(pos);
+				dataOut.flush();
+				
 				x = x + (D_c * Math.cos(theta));
 				y = y + (D_c * Math.sin(theta));
 				theta = (theta + ((D_r - D_l) / L));
 			}
 			
+			pos = FIM.getBytes();
+			dataOut.write(pos);
 			dataOut.flush();
-			out.close();
-
+			 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		RConsole.close();
 	}
 
 	public static boolean checkIfPointBelongsCircumference(double x_d, double y_d, double x, double y) {
@@ -242,5 +235,12 @@ public class Client {
 		if (distance > R && distance <= R_M)
 			return true;
 		return false;
+	}
+	
+	public static double round(double value) {
+	    long factor = (long) Math.pow(10, NUMBER_DECIMAL);
+	    value = value * factor;
+	    long tmp = Math.round(value);
+	    return (double) tmp / factor;
 	}
 }
