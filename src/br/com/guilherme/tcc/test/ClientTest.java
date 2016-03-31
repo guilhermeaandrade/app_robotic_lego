@@ -1,17 +1,13 @@
 package br.com.guilherme.tcc.test;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import lejos.nxt.Button;
 import lejos.nxt.LCD;
 import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
-import lejos.nxt.comm.Bluetooth;
-import lejos.nxt.comm.NXTConnection;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
@@ -25,8 +21,8 @@ public class ClientTest {
 	public static final Double RAD_TO_DEG = (180 / Math.PI);
 	public static final Double L = 0.1218; // tamanho do eixo das rodas do robô
 	public static final Double r = 0.0215; // raio da roda
-	public static final Double R = 0.05;
-	public static final Double R_M = 0.22;
+	public static final Double R = 0.20;
+	public static final Double R_M = 0.40;
 	public static final Double CONST_EQ = 0.0878;
 	public static final Double CONST_FREQ = 0.3;
 	public static final String FIM = "fim";
@@ -144,7 +140,7 @@ public class ClientTest {
 		
 		Double D_l, D_r, D_c;
 		float v, w, w_r, w_l;
-		float k_theta = 1.0f;
+		float k_theta = 1.35f;
 
 		FileOutputStream out = null; 
 	    File data = null;
@@ -158,33 +154,16 @@ public class ClientTest {
 
 				time = System.currentTimeMillis() - t0;
 				
-				//if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
-					//RConsole.println("if");
-					//x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
-					//RConsole.println("x_d: "+x_d);
-					//y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
-					//RConsole.println("y_d: "+y_d);
-				//}else{
-				//	x_d = x_a;
-				//	y_d = y_a;
-				//}
-				
-				x_d = x_a;
-				y_d = y_a;
-				
-				e_x = x_d - x;
-				//RConsole.println("x_d - x = e_x => "+x_d + "-" +x + " = "+e_x);
-				//RConsole.println("x: "+x);
-				e_y = y_d - y;
-				//RConsole.println("y_d - y = e_y => "+y_d + "-" +y + " = "+e_y+"\n");
-				//RConsole.println("y: "+y);
-		
-				//RConsole.println("erro: "+Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)));
-				if(Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)) < 0.0205){
-					MOTOR_RIGTH.stop();
-					MOTOR_LEFT.stop();
-					break;
+				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
+					x_d = R * (Math.cos((Double.valueOf(0.5) * time.doubleValue())/1000)) + x_a;
+					y_d = R * (Math.sin((Double.valueOf(0.5) * time.doubleValue())/1000)) + y_a;
+				}else{
+					x_d = x_a;
+					y_d = y_a;
 				}
+			
+				e_x = x_d - x;
+				e_y = y_d - y;
 				
 				theta_d = (Math.atan2(e_y, e_x)); // radianos
 				e_theta = (theta_d - theta);
@@ -254,8 +233,8 @@ public class ClientTest {
 
 	//metodo responsavel por realizar verificação se ponto encontra-se entre dois raios
 	public static boolean checkIfPointBelongsCircumference(double x_d, double y_d, double x, double y) {
-		float distance = (float) Math.sqrt(Math.pow((x - x_d), 2) + Math.pow((y - y_d), 2));
-		if (distance > R && distance <= R_M)
+		float distance = (float) Math.sqrt(Math.pow((x_d - x), 2) + Math.pow((y_d - y), 2));
+		if (distance < R_M)
 			return true;
 		return false;
 	}
