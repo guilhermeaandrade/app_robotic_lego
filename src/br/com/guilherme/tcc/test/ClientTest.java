@@ -50,8 +50,7 @@ public class ClientTest {
 	// metodo principal
 	public static void main(String[] args) {
 		doControl();
-		/*
-		char controle = 0;
+		/*char controle = 0;
 		boolean autoProcessed = false;
 
 		LCD.drawString("Esperando", 0, 0); 
@@ -126,35 +125,9 @@ public class ClientTest {
 		performMove(letra, speed);
 	}
 	
-	// metedo reponsavel por realizar o controle sobre o robo
+	// metodo reponsavel por realizar o controle sobre o robo
 	public static void doControl() {
 	//public static void doControl(DataOutputStream dataOut) {
-		
-		FileOutputStream out = null; // declare outside the try block
-	    File data = null;
-	    String content = "This is the text context";
-	    try {
-	    	data = new File("data.txt");
-	    	out = new FileOutputStream(data);
-	    	
-	    	if(!data.exists()) data.createNewFile();
-	    	byte[] contentBytes = content.getBytes();
-	    	
-	    	out.write(contentBytes);
-	    	out.flush();
-	    	out.close();
-	    	
-	      } catch(IOException e) {
-	      	System.err.println("Failed to create output stream");
-	      	System.exit(1);
-	      } finally{
-	    	  try {
-					if(out != null) out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-	      }
-		
 		
 		String position = null;
 		byte[] pos = null;
@@ -163,8 +136,8 @@ public class ClientTest {
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		
-		Double x = 0.0, y = 0.0, theta = 0.0;
-		Double x_a = 0.3, y_a = 0.3;
+		Double x = 0.0, y = 0.0, theta = Math.PI;//0.0;
+		Double x_a = 0.89, y_a = 0.34;
 		
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
@@ -173,21 +146,28 @@ public class ClientTest {
 		float v, w, w_r, w_l;
 		float k_theta = 1.0f;
 
-		//try {
+		FileOutputStream out = null; 
+	    File data = null;
+		
+		try {
+			data = new File("data.txt");
+	    	out = new FileOutputStream(data);
+	    	if(!data.exists()) data.createNewFile();
+	    	
 			while (System.currentTimeMillis() - t0 <= 37700) {
 
 				time = System.currentTimeMillis() - t0;
-				/*
-				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
+				
+				//if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
 					//RConsole.println("if");
-					x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
+					//x_d = R * (Math.cos((Double.valueOf(0.333) * time.doubleValue())/1000)) + x_a;
 					//RConsole.println("x_d: "+x_d);
-					y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
+					//y_d = R * (Math.sin((Double.valueOf(0.333) * time.doubleValue())/1000)) + y_a;
 					//RConsole.println("y_d: "+y_d);
-				}else{
-					x_d = x_a;
-					y_d = y_a;
-				}*/
+				//}else{
+				//	x_d = x_a;
+				//	y_d = y_a;
+				//}
 				
 				x_d = x_a;
 				y_d = y_a;
@@ -243,6 +223,11 @@ public class ClientTest {
 				
 				position = round(x) + "," + round(y) + "," + round(theta) + "," + round(v) + "," + round(w) + "," + round((Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2))));
 				pos = position.getBytes();
+				
+				out.write(pos);
+				out.write("\n".getBytes());
+				out.flush();
+				
 				//dataOut.write(pos);
 				//dataOut.flush();
 				
@@ -255,11 +240,19 @@ public class ClientTest {
 			//dataOut.write(pos);
 			//dataOut.flush();
 			 
-		//} catch (IOException e) {
-			//e.printStackTrace();
-		//}
+		} catch (IOException e) {
+			System.err.println("Failed to create output stream");
+	      	System.exit(1);
+		} finally{
+	    	  try {
+					if(out != null) out.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+	      }
 	}
 
+	//metodo responsavel por realizar verificação se ponto encontra-se entre dois raios
 	public static boolean checkIfPointBelongsCircumference(double x_d, double y_d, double x, double y) {
 		float distance = (float) Math.sqrt(Math.pow((x - x_d), 2) + Math.pow((y - y_d), 2));
 		if (distance > R && distance <= R_M)
@@ -267,6 +260,7 @@ public class ClientTest {
 		return false;
 	}
 	
+	//metodo responsavel por arredondar os valores
 	public static double round(double value) {
 	    long factor = (long) Math.pow(10, NUMBER_DECIMAL);
 	    value = value * factor;
