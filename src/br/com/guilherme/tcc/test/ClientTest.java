@@ -133,7 +133,7 @@ public class ClientTest {
 		long t0 = System.currentTimeMillis();
 		
 		Double x = 0.0, y = 0.0, theta = Math.PI;//0.0;
-		Double x_a = 0.89, y_a = 0.34;
+		Double x_a = 0.9, y_a = 0.9;
 		
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
@@ -200,7 +200,7 @@ public class ClientTest {
 				D_l = ((2 * Math.PI * r * deg_l) / 360);
 				D_c = (D_r + D_l) / 2;
 				
-				position = round(x) + "," + round(y) + "," + round(theta) + "," + round(v) + "," + round(w) + "," + round((Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2))));
+				position = round(x) + "," + round(y) + "," + round(theta) + "," + round(v) + "," + round(w) + "," + round((Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)))) + "," + (time/1000.0000);
 				pos = position.getBytes();
 				
 				out.write(pos);

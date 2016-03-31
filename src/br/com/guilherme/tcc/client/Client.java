@@ -201,7 +201,7 @@ public class Client {
 				D_l = ((2 * Math.PI * r * deg_l) / 360);
 				D_c = (D_r + D_l) / 2;
 				
-				position = round(x) + "," + round(y) + "," + round(theta) + "," + round(v) + "," + round(w) + "," + round((Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2))));
+				position = round(x) + "," + round(y) + "," + round(theta) + "," + round(v) + "," + round(w) + "," + round((Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)))) + "," + (time/1000.0000);
 				pos = position.getBytes();
 				
 				out.write(pos);
@@ -227,7 +227,7 @@ public class Client {
 	    	  try {
 					if(out != null) out.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					System.err.println("Failed to close FileOutputStream");
 				}
 	      }
 	}
