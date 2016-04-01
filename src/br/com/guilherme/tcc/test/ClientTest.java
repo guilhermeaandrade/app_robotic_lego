@@ -1,13 +1,17 @@
 package br.com.guilherme.tcc.test;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import lejos.nxt.Button;
 import lejos.nxt.LCD;
 import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
+import lejos.nxt.comm.Bluetooth;
+import lejos.nxt.comm.NXTConnection;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
@@ -42,12 +46,12 @@ public class ClientTest {
 	public static final char CONNECT = 'c';
 	public static final char MANUAL_CONTROL = 'm';
 	public static final char AUTO_CONTROL = 'u';
+	
+	private static boolean flag;
 
 	// metodo principal
 	public static void main(String[] args) {
-		doControl();
-		/*char controle = 0;
-		boolean autoProcessed = false;
+		char controle = 0;
 
 		LCD.drawString("Esperando", 0, 0); 
 		NXTConnection conexao = Bluetooth.waitForConnection(); 
@@ -64,18 +68,21 @@ public class ClientTest {
 			try {
 				controle = dataIn.readChar();
 				if(controle == 'm') {
-					LCD.drawString("Controle Manual", 0, 1);
-					executeMoveManul(dataIn);
+					flag = false;
+					LCD.clear(); // limpando e tela
+					LCD.drawString("Controle Manual", 0, 0);
+					executeMoveManual(dataIn);
 				}
-				if(controle == 'u' && !autoProcessed) { 
-					LCD.drawString("Controle Automatico", 0, 1);
-					doControl(dataOut);
-					autoProcessed = true;
+				if(controle == 'u') { 
+					flag = true;
+					LCD.clear(); // limpando e tela
+					LCD.drawString("Controle Automatico", 0, 0);
+					new ControlThread(dataOut).start();
 				}
 			 } catch (IOException e) {
 				 System.out.println(e.getMessage().toString());
 			 }
-		}*/
+		}
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
@@ -108,7 +115,7 @@ public class ClientTest {
 	}
 	
 	// metodo responsavel por realizar movimento manual
-	public static void executeMoveManul(DataInputStream in){
+	public static void executeMoveManual(DataInputStream in){
 		char letra = 0;
 		byte speed = 0;
 		try {
@@ -122,8 +129,8 @@ public class ClientTest {
 	}
 	
 	// metodo reponsavel por realizar o controle sobre o robo
-	public static void doControl() {
-	//public static void doControl(DataOutputStream dataOut) {
+	//public static void doControl() {
+	public static void doControl(DataOutputStream dataOut) {
 		
 		String position = null;
 		byte[] pos = null;
@@ -147,10 +154,10 @@ public class ClientTest {
 		
 		try {
 			data = new File("data.txt");
-	    	out = new FileOutputStream(data);
-	    	if(!data.exists()) data.createNewFile();
+			if(!data.exists()) data.createNewFile();
+			out = new FileOutputStream(data);
 	    	
-			while (System.currentTimeMillis() - t0 <= 37700) {
+			while (System.currentTimeMillis() - t0 <= 37700 && flag) {
 
 				time = System.currentTimeMillis() - t0;
 				
@@ -215,10 +222,11 @@ public class ClientTest {
 				theta = (theta + ((D_r - D_l) / L));
 			}
 			
-			pos = FIM.getBytes();
-			//dataOut.write(pos);
-			//dataOut.flush();
-			 
+			if(flag){
+				pos = FIM.getBytes();
+				//dataOut.write(pos);
+				//dataOut.flush();
+			} 
 		} catch (IOException e) {
 			System.err.println("Failed to create output stream");
 	      	System.exit(1);
@@ -245,5 +253,27 @@ public class ClientTest {
 	    value = value * factor;
 	    long tmp = Math.round(value);
 	    return (double) tmp / factor;
+	}
+	
+    public static class ControlThread extends Thread {
+		
+    	private DataOutputStream dataOut;
+    	private volatile boolean running = true;
+    	
+		public ControlThread(DataOutputStream data){
+			this.dataOut = data;
+		}
+		
+		public void run() {
+			LCD.clear();
+			if(running) LCD.drawString("running", 0, 0);
+			else LCD.drawString("not running", 0, 0);
+			doControl(dataOut);
+			LCD.drawString("passou doControl", 0, 0);
+		}
+		
+		public void cancel(){
+			running = false;
+		}
 	}
 }

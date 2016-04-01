@@ -67,7 +67,7 @@ public class Client {
 				controle = dataIn.readChar();
 				if(controle == 'm') {
 					LCD.drawString("Controle Manual", 0, 1);
-					executeMoveManul(dataIn);
+					executeMoveManual(dataIn);
 				}
 				if(controle == 'u' && !autoProcessed) { 
 					LCD.drawString("Controle Automatico", 0, 1);
@@ -110,7 +110,7 @@ public class Client {
 	}
 	
 	// metodo responsavel por realizar movimento manual
-	public static void executeMoveManul(DataInputStream in){
+	public static void executeMoveManual(DataInputStream in){
 		char letra = 0;
 		byte speed = 0;
 		try {
@@ -148,8 +148,8 @@ public class Client {
 		
 		try {
 			data = new File("data.txt");
+			if(!data.exists()) data.createNewFile();
 	    	out = new FileOutputStream(data);
-	    	if(!data.exists()) data.createNewFile();
 	    	
 			while (System.currentTimeMillis() - t0 <= 37700) {
 
