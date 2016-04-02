@@ -47,12 +47,12 @@ public class ClientTest {
 	public static final char MANUAL_CONTROL = 'm';
 	public static final char AUTO_CONTROL = 'u';
 	
-	private static boolean flag;
+	private static volatile boolean flag = true;
 
 	// metodo principal
 	public static void main(String[] args) {
 		char controle = 0;
-
+		
 		LCD.drawString("Esperando", 0, 0); 
 		NXTConnection conexao = Bluetooth.waitForConnection(); 
 		// configurando a conxão para se comunicar com dispositivos móveis, como um celular Android
@@ -63,25 +63,55 @@ public class ClientTest {
 		
 		LCD.clear(); // limpando e tela
 		LCD.drawString("Conectado", 0, 0);
-		
-		while (!Button.ESCAPE.isDown()) {
-			try {
-				controle = dataIn.readChar();
-				if(controle == 'm') {
-					flag = false;
-					LCD.clear(); // limpando e tela
-					LCD.drawString("Controle Manual", 0, 0);
-					executeMoveManual(dataIn);
-				}
-				if(controle == 'u') { 
-					flag = true;
-					LCD.clear(); // limpando e tela
-					LCD.drawString("Controle Automatico", 0, 0);
-					new ControlThread(dataOut).start();
-				}
-			 } catch (IOException e) {
-				 System.out.println(e.getMessage().toString());
-			 }
+		 
+		FileOutputStream fous = null; 
+	    File data = null;
+	    try {
+			data = new File("log.txt");
+			if(data.exists()) {
+				data.delete();
+				data.createNewFile();
+			}
+			fous = new FileOutputStream(data);
+			
+			while (!Button.ESCAPE.isDown()) {
+				try {
+					controle = dataIn.readChar();
+					
+					String log = ""+controle;
+					fous.write(log.getBytes());
+					fous.write("\n".getBytes());
+					fous.flush();
+					
+					if(controle != '0'){
+						if(controle == MANUAL_CONTROL) {
+							flag = false;
+							LCD.clear(); // limpando e tela
+							LCD.drawString("Controle Manual", 0, 0);
+							executeMoveManual(dataIn);
+						}
+						if(controle == AUTO_CONTROL) { 
+							flag = true;
+							LCD.clear(); // limpando e tela
+							LCD.drawString("Controle Automatico", 0, 0);
+							dataIn.readChar();
+							dataIn.readByte();
+							new ControlThread(dataOut).start();
+						}
+					}
+				 } catch (IOException e) {
+					 System.out.println(e.getMessage().toString());
+				 }
+			}
+	    }catch(IOException e){
+		    System.err.println("Failed to create output stream");
+	      	System.exit(1);
+		} finally{
+    	  try {
+				if(fous != null) fous.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -91,26 +121,26 @@ public class ClientTest {
 		Motor.B.setSpeed(velocidade);
 		Motor.C.setSpeed(velocidade);
 		switch (cmd) {
-		case FWD:
-			Motor.B.forward();
-			Motor.C.forward();
-			break;
-		case BWD:
-			Motor.B.backward();
-			Motor.C.backward();
-			break;
-		case LEFT:
-			Motor.B.forward();
-			Motor.C.backward();
-			break;
-		case RIGHT:
-			Motor.C.forward();
-			Motor.B.backward();
-			break;
-		case STOP:
-			Motor.C.stop();
-			Motor.B.stop();
-			break;
+			case FWD:
+				Motor.B.forward();
+				Motor.C.forward();
+				break;
+			case BWD:
+				Motor.B.backward();
+				Motor.C.backward();
+				break;
+			case LEFT:
+				Motor.B.forward();
+				Motor.C.backward();
+				break;
+			case RIGHT:
+				Motor.C.forward();
+				Motor.B.backward();
+				break;
+			case STOP:
+				Motor.C.stop();
+				Motor.B.stop();
+				break;
 		}
 	}
 	
@@ -255,25 +285,18 @@ public class ClientTest {
 	    return (double) tmp / factor;
 	}
 	
+	//thread responsavel pelo controle automatico
     public static class ControlThread extends Thread {
 		
     	private DataOutputStream dataOut;
-    	private volatile boolean running = true;
     	
 		public ControlThread(DataOutputStream data){
 			this.dataOut = data;
 		}
 		
 		public void run() {
-			LCD.clear();
-			if(running) LCD.drawString("running", 0, 0);
-			else LCD.drawString("not running", 0, 0);
 			doControl(dataOut);
 			LCD.drawString("passou doControl", 0, 0);
-		}
-		
-		public void cancel(){
-			running = false;
 		}
 	}
 }
