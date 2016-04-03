@@ -12,10 +12,11 @@ import lejos.nxt.Motor;
 import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.comm.Bluetooth;
 import lejos.nxt.comm.NXTConnection;
+import br.com.guilherme.tcc.utils.Semaphore;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
-	
+
 	// DEFINIÇÃO DE VARIÁVEIS UTILIZADAS PARA AÇÕES DE CONTROLE
 	public static final long MS_20 = 100;
 	public static final NXTRegulatedMotor MOTOR_RIGTH = Motor.B;
@@ -31,7 +32,7 @@ public class ClientTest {
 	public static final Double CONST_FREQ = 0.3;
 	public static final String FIM = "fim";
 	public static final int NUMBER_DECIMAL = 7;
-	
+
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
 	// x^2 + y^2 - 2ax - 2by + a^2 + b^2 - r^2 = 0 -> equação geral
@@ -46,71 +47,46 @@ public class ClientTest {
 	public static final char CONNECT = 'c';
 	public static final char MANUAL_CONTROL = 'm';
 	public static final char AUTO_CONTROL = 'u';
-	
-	private static volatile boolean flag = true;
+	public static Semaphore semaphore;
+	private static boolean flag = true;
 
 	// metodo principal
 	public static void main(String[] args) {
 		char controle = 0;
-		
-		LCD.drawString("Esperando", 0, 0); 
-		NXTConnection conexao = Bluetooth.waitForConnection(); 
-		// configurando a conxão para se comunicar com dispositivos móveis, como um celular Android
+		semaphore = new Semaphore(1);
+
+		LCD.drawString("Esperando", 0, 0);
+		NXTConnection conexao = Bluetooth.waitForConnection();
+		// configurando a conxão para se comunicar com dispositivos móveis, como
+		// um celular Android
 		conexao.setIOMode(NXTConnection.RAW);
 		// fluxo de entrada de dados
 		DataInputStream dataIn = conexao.openDataInputStream();
 		DataOutputStream dataOut = conexao.openDataOutputStream();
-		
+
 		LCD.clear(); // limpando e tela
 		LCD.drawString("Conectado", 0, 0);
-		 
-		FileOutputStream fous = null; 
-	    File data = null;
-	    try {
-			data = new File("log.txt");
-			if(data.exists()) {
-				data.delete();
-				data.createNewFile();
-			}
-			fous = new FileOutputStream(data);
-			
-			while (!Button.ESCAPE.isDown()) {
-				try {
-					controle = dataIn.readChar();
-					
-					String log = ""+controle;
-					fous.write(log.getBytes());
-					fous.write("\n".getBytes());
-					fous.flush();
-					
-					if(controle != '0'){
-						if(controle == MANUAL_CONTROL) {
-							flag = false;
-							LCD.clear(); // limpando e tela
-							LCD.drawString("Controle Manual", 0, 0);
-							executeMoveManual(dataIn);
-						}
-						if(controle == AUTO_CONTROL) { 
-							flag = true;
-							LCD.clear(); // limpando e tela
-							LCD.drawString("Controle Automatico", 0, 0);
-							dataIn.readChar();
-							dataIn.readByte();
-							new ControlThread(dataOut).start();
-						}
-					}
-				 } catch (IOException e) {
-					 System.out.println(e.getMessage().toString());
-				 }
-			}
-	    }catch(IOException e){
-		    System.err.println("Failed to create output stream");
-	      	System.exit(1);
-		} finally{
-    	  try {
-				if(fous != null) fous.close();
+
+		while (!Button.ESCAPE.isDown()) {
+			try {
+				controle = dataIn.readChar();
+
+				if (controle == MANUAL_CONTROL) {
+					flag = false;
+					semaphore.p();
+					executeMoveManual(dataIn);
+					semaphore.v();
+				}
+				if (controle == AUTO_CONTROL) {
+					flag = true;
+					dataIn.readChar();
+					dataIn.readByte();
+					new ControlThread(dataOut).start();
+				}
+
 			} catch (IOException e) {
-				e.printStackTrace();
+				LCD.clear();
+				LCD.drawString(e.getMessage().toString(), 0, 0);
 			}
 		}
 	}
@@ -121,31 +97,31 @@ public class ClientTest {
 		Motor.B.setSpeed(velocidade);
 		Motor.C.setSpeed(velocidade);
 		switch (cmd) {
-			case FWD:
-				Motor.B.forward();
-				Motor.C.forward();
-				break;
-			case BWD:
-				Motor.B.backward();
-				Motor.C.backward();
-				break;
-			case LEFT:
-				Motor.B.forward();
-				Motor.C.backward();
-				break;
-			case RIGHT:
-				Motor.C.forward();
-				Motor.B.backward();
-				break;
-			case STOP:
-				Motor.C.stop();
-				Motor.B.stop();
-				break;
+		case FWD:
+			Motor.B.forward();
+			Motor.C.forward();
+			break;
+		case BWD:
+			Motor.B.backward();
+			Motor.C.backward();
+			break;
+		case LEFT:
+			Motor.B.forward();
+			Motor.C.backward();
+			break;
+		case RIGHT:
+			Motor.C.forward();
+			Motor.B.backward();
+			break;
+		case STOP:
+			Motor.C.stop();
+			Motor.B.stop();
+			break;
 		}
 	}
-	
+
 	// metodo responsavel por realizar movimento manual
-	public static void executeMoveManual(DataInputStream in){
+	public static void executeMoveManual(DataInputStream in) {
 		char letra = 0;
 		byte speed = 0;
 		try {
@@ -157,70 +133,76 @@ public class ClientTest {
 		}
 		performMove(letra, speed);
 	}
-	
+
 	// metodo reponsavel por realizar o controle sobre o robo
-	//public static void doControl() {
+	// public static void doControl() {
 	public static void doControl(DataOutputStream dataOut) {
-		
 		String position = null;
 		byte[] pos = null;
 		Long time = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
-		
-		Double x = 0.0, y = 0.0, theta = Math.PI;//0.0;
+
+		Double x = 0.0, y = 0.0, theta = Math.PI;// 0.0;
 		Double x_a = 0.9, y_a = 0.9;
-		
+
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
-		
+
 		Double D_l, D_r, D_c;
 		float v, w, w_r, w_l;
 		float k_theta = 1.35f;
 
-		FileOutputStream out = null; 
-	    File data = null;
-		
+		FileOutputStream out = null;
+		File data = null;
 		try {
 			data = new File("data.txt");
-			if(!data.exists()) data.createNewFile();
+			if (data.exists()) {
+				data.delete();
+				data.createNewFile();
+			}
 			out = new FileOutputStream(data);
-	    	
-			while (System.currentTimeMillis() - t0 <= 37700 && flag) {
 
-				time = System.currentTimeMillis() - t0;
+			while (System.currentTimeMillis() - t0 <= 37700 && flag) {
+				semaphore.p();
 				
-				if(checkIfPointBelongsCircumference(x_a, y_a, x, y)){
-					x_d = R * (Math.cos((Double.valueOf(0.5) * time.doubleValue())/1000)) + x_a;
-					y_d = R * (Math.sin((Double.valueOf(0.5) * time.doubleValue())/1000)) + y_a;
-				}else{
+				time = System.currentTimeMillis() - t0;
+
+				if (checkIfPointBelongsCircumference(x_a, y_a, x, y)) {
+					x_d = R * (Math.cos((Double.valueOf(0.5) * time
+									.doubleValue()) / 1000)) + x_a;
+					y_d = R * (Math.sin((Double.valueOf(0.5) * time
+									.doubleValue()) / 1000)) + y_a;
+				} else {
 					x_d = x_a;
 					y_d = y_a;
 				}
-			
+
 				e_x = x_d - x;
 				e_y = y_d - y;
-				
+
 				theta_d = (Math.atan2(e_y, e_x)); // radianos
 				e_theta = (theta_d - theta);
 				e_theta = (Math.atan2(Math.sin(e_theta), Math.cos(e_theta)));
-				
-				double value = ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-						- Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))))
-						/ ((Math.exp(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-								+ Math.exp(-(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
-				
+
+				double value = ((Math.exp(Math.sqrt(Math.pow(e_x, 2)
+						+ Math.pow(e_y, 2)))) - Math.exp(-(Math.sqrt(Math.pow(
+						e_x, 2) + Math.pow(e_y, 2)))))
+						/ ((Math.exp(Math.sqrt(Math.pow(e_x, 2)
+								+ Math.pow(e_y, 2)))) + Math.exp(-(Math
+								.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
+
 				v = (float) (0.1 * value + CONST_EQ);
-				
+
 				w = (float) (k_theta * e_theta);
-				
+
 				w_r = (float) ((2 * v + w * L) / (2 * r)); // rad/s
 				w_r = (float) (w_r * RAD_TO_DEG);
-				
+
 				w_l = (float) ((2 * v - w * L) / (2 * r)); // rad/s
 				w_l = (float) (w_l * RAD_TO_DEG);
-				
+
 				MOTOR_RIGTH.setSpeed((float) w_r);
 				MOTOR_RIGTH.forward();
 
@@ -229,74 +211,90 @@ public class ClientTest {
 
 				long deg_r = MOTOR_RIGTH.getTachoCount() - prev_deg_r;
 				prev_deg_r = MOTOR_RIGTH.getTachoCount();
-				
+
 				long deg_l = MOTOR_LEFT.getTachoCount() - prev_deg_l;
 				prev_deg_l = MOTOR_LEFT.getTachoCount();
-				
+
 				D_r = ((2 * Math.PI * r * deg_r) / 360);
 				D_l = ((2 * Math.PI * r * deg_l) / 360);
 				D_c = (D_r + D_l) / 2;
-				
-				position = round(x) + "," + round(y) + "," + round(theta) + "," + round(v) + "," + round(w) + "," + round((Math.sqrt(Math.pow(e_x, 2)+Math.pow(e_y, 2)))) + "," + (time/1000.0000);
+
+				position = round(x)
+						+ ","
+						+ round(y)
+						+ ","
+						+ round(theta)
+						+ ","
+						+ round(v)
+						+ ","
+						+ round(w)
+						+ ","
+						+ round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+						+ "," + (time / 1000.0000);
 				pos = position.getBytes();
-				
+
 				out.write(pos);
 				out.write("\n".getBytes());
 				out.flush();
-				
-				//dataOut.write(pos);
-				//dataOut.flush();
-				
+
+				// dataOut.write(pos);
+				// dataOut.flush();
+
 				x = x + (D_c * Math.cos(theta));
 				y = y + (D_c * Math.sin(theta));
 				theta = (theta + ((D_r - D_l) / L));
+
+				semaphore.v();
 			}
-			
-			if(flag){
+
+			if (flag) {
 				pos = FIM.getBytes();
-				//dataOut.write(pos);
-				//dataOut.flush();
-			} 
+				// dataOut.write(pos);
+				// dataOut.flush();
+				MOTOR_RIGTH.stop();
+				MOTOR_LEFT.stop();
+			}
 		} catch (IOException e) {
 			System.err.println("Failed to create output stream");
-	      	System.exit(1);
-		} finally{
-	    	  try {
-					if(out != null) out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-	      }
+			System.exit(1);
+		} 
+		try {
+			out.close();
+		} catch (IOException e) {
+			System.err.println("Failed to close output stream");
+			System.exit(1);
+		}
 	}
 
-	//metodo responsavel por realizar verificação se ponto encontra-se entre dois raios
-	public static boolean checkIfPointBelongsCircumference(double x_d, double y_d, double x, double y) {
-		float distance = (float) Math.sqrt(Math.pow((x_d - x), 2) + Math.pow((y_d - y), 2));
+	// metodo responsavel por realizar verificação se ponto encontra-se entre dois raios
+	public static boolean checkIfPointBelongsCircumference(double x_d,
+			double y_d, double x, double y) {
+		float distance = (float) Math.sqrt(Math.pow((x_d - x), 2)
+				+ Math.pow((y_d - y), 2));
 		if (distance < R_M)
 			return true;
 		return false;
 	}
-	
-	//metodo responsavel por arredondar os valores
+
+	// metodo responsavel por arredondar os valores
 	public static double round(double value) {
-	    long factor = (long) Math.pow(10, NUMBER_DECIMAL);
-	    value = value * factor;
-	    long tmp = Math.round(value);
-	    return (double) tmp / factor;
+		long factor = (long) Math.pow(10, NUMBER_DECIMAL);
+		value = value * factor;
+		long tmp = Math.round(value);
+		return (double) tmp / factor;
 	}
-	
-	//thread responsavel pelo controle automatico
-    public static class ControlThread extends Thread {
+
+	// thread responsavel pelo controle automatico
+	public static class ControlThread extends Thread {
+
+		private DataOutputStream dataOut;
 		
-    	private DataOutputStream dataOut;
-    	
-		public ControlThread(DataOutputStream data){
+		public ControlThread(DataOutputStream data) {
 			this.dataOut = data;
 		}
-		
+
 		public void run() {
 			doControl(dataOut);
-			LCD.drawString("passou doControl", 0, 0);
 		}
 	}
 }
