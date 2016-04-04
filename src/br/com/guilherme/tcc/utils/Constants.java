@@ -36,4 +36,5 @@ public class Constants {
 	public static final char MANUAL_CONTROL = 'm';
 	public static final char AUTO_CONTROL = 'u';
 	public static final char C_SETTINGS = 's';
+	public static final char C_STOP_CONNECTION = 't';
 }

@@ -72,6 +72,11 @@ public class ClientTest {
 							break;
 					}
 				}
+				if (command == Constants.C_STOP_CONNECTION) {
+					LCD.drawString("comm: "+command, 0, 5);
+					dataIn.readChar();
+					dataIn.readDouble();
+				}
 			} catch (IOException e) {
 				LCD.clear();
 				LCD.drawString(e.getMessage().toString(), 0, 0);
