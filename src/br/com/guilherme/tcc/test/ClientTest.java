@@ -8,51 +8,19 @@ import java.io.IOException;
 
 import lejos.nxt.Button;
 import lejos.nxt.LCD;
-import lejos.nxt.Motor;
-import lejos.nxt.NXTRegulatedMotor;
 import lejos.nxt.comm.Bluetooth;
 import lejos.nxt.comm.NXTConnection;
+import br.com.guilherme.tcc.utils.Constants;
 import br.com.guilherme.tcc.utils.Semaphore;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
-
-	// DEFINIÇÃO DE VARIÁVEIS UTILIZADAS PARA AÇÕES DE CONTROLE
-	public static final long MS_20 = 100;
-	public static final NXTRegulatedMotor MOTOR_RIGTH = Motor.B;
-	public static final NXTRegulatedMotor MOTOR_LEFT = Motor.C;
-	public static final Integer SPEED = 30;
-	public static final Double DEG_TO_RAD = (Math.PI / 180);
-	public static final Double RAD_TO_DEG = (180 / Math.PI);
-	public static final Double L = 0.1218; // tamanho do eixo das rodas do robô
-	public static final Double r = 0.0215; // raio da roda
-	public static final Double R = 0.20;
-	public static final Double R_M = 0.40;
-	public static final Double CONST_EQ = 0.0878;
-	public static final Double CONST_FREQ = 0.3;
-	public static final String FIM = "fim";
-	public static final int NUMBER_DECIMAL = 7;
-
-	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
-	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
-	// x^2 + y^2 - 2ax - 2by + a^2 + b^2 - r^2 = 0 -> equação geral
-	// sqrt((x - x0)^2 + (y - y0)^2)-> distancia entre dois pontos
-
-	// DEFINIÇÃO DE VARIÁVEIS UTILIZADAS PARA CONTROLE MANUAL
-	public static final char LEFT = 'a'; // esquerda
-	public static final char RIGHT = 'd'; // direita
-	public static final char FWD = 'w'; // para frente
-	public static final char BWD = 's'; // para tras
-	public static final char STOP = 'q'; // parar movimento
-	public static final char CONNECT = 'c';
-	public static final char MANUAL_CONTROL = 'm';
-	public static final char AUTO_CONTROL = 'u';
 	public static Semaphore semaphore;
 	private static boolean flag = true;
 
 	// metodo principal
 	public static void main(String[] args) {
-		char controle = 0;
+		char command = 0;
 		semaphore = new Semaphore(1);
 
 		LCD.drawString("Esperando", 0, 0);
@@ -69,21 +37,41 @@ public class ClientTest {
 
 		while (!Button.ESCAPE.isDown()) {
 			try {
-				controle = dataIn.readChar();
-
-				if (controle == MANUAL_CONTROL) {
+				command = dataIn.readChar();
+				LCD.clear();
+				LCD.drawString(""+command, 0, 0);
+				if (command == Constants.MANUAL_CONTROL) {
 					flag = false;
 					semaphore.p();
 					executeMoveManual(dataIn);
 					semaphore.v();
 				}
-				if (controle == AUTO_CONTROL) {
+				if (command == Constants.AUTO_CONTROL) {
 					flag = true;
 					dataIn.readChar();
-					dataIn.readByte();
+					dataIn.readDouble();
 					new ControlThread(dataOut).start();
 				}
-
+				if (command == Constants.C_SETTINGS) {
+					char identify = dataIn.readChar();
+					switch(identify){
+						case 'k':
+							dataIn.readDouble();
+							LCD.clear();
+							LCD.drawString("controlador", 0, 0);
+							break;
+						case 'x':
+							dataIn.readDouble();
+							LCD.clear();
+							LCD.drawString("pos ini", 0, 0);
+							break;
+						case 'v':
+							dataIn.readDouble();
+							LCD.clear();
+							LCD.drawString("pos fin", 0, 0);
+							break;
+					}
+				}
 			} catch (IOException e) {
 				LCD.clear();
 				LCD.drawString(e.getMessage().toString(), 0, 0);
@@ -92,41 +80,41 @@ public class ClientTest {
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
-	public static void performMove(char cmd, int speed) {
-		int velocidade = speed * 9; // define velocidade
-		Motor.B.setSpeed(velocidade);
-		Motor.C.setSpeed(velocidade);
+	public static void performMove(char cmd, Double speed) {
+		int velocidade = Integer.parseInt(""+(speed * 9)); // define velocidade
+		Constants.MOTOR_RIGTH.setSpeed(velocidade);
+		Constants.MOTOR_LEFT.setSpeed(velocidade);
 		switch (cmd) {
-		case FWD:
-			Motor.B.forward();
-			Motor.C.forward();
-			break;
-		case BWD:
-			Motor.B.backward();
-			Motor.C.backward();
-			break;
-		case LEFT:
-			Motor.B.forward();
-			Motor.C.backward();
-			break;
-		case RIGHT:
-			Motor.C.forward();
-			Motor.B.backward();
-			break;
-		case STOP:
-			Motor.C.stop();
-			Motor.B.stop();
-			break;
+			case Constants.FWD:
+				Constants.MOTOR_RIGTH.forward();
+				Constants.MOTOR_LEFT.forward();
+				break;
+			case Constants.BWD:
+				Constants.MOTOR_RIGTH.backward();
+				Constants.MOTOR_LEFT.backward();
+				break;
+			case Constants.LEFT:
+				Constants.MOTOR_RIGTH.forward();
+				Constants.MOTOR_LEFT.backward();
+				break;
+			case Constants.RIGHT:
+				Constants.MOTOR_RIGTH.backward();
+				Constants.MOTOR_LEFT.forward();
+				break;
+			case Constants.STOP:
+				Constants.MOTOR_RIGTH.stop();
+				Constants.MOTOR_LEFT.stop();
+				break;
 		}
 	}
 
 	// metodo responsavel por realizar movimento manual
 	public static void executeMoveManual(DataInputStream in) {
 		char letra = 0;
-		byte speed = 0;
+		Double speed = 0.0;
 		try {
 			letra = in.readChar();
-			speed = in.readByte();
+			speed = in.readDouble();
 			LCD.clear();
 		} catch (IOException e) {
 			e.getMessage();
@@ -135,7 +123,6 @@ public class ClientTest {
 	}
 
 	// metodo reponsavel por realizar o controle sobre o robo
-	// public static void doControl() {
 	public static void doControl(DataOutputStream dataOut) {
 		String position = null;
 		byte[] pos = null;
@@ -170,9 +157,9 @@ public class ClientTest {
 				time = System.currentTimeMillis() - t0;
 
 				if (checkIfPointBelongsCircumference(x_a, y_a, x, y)) {
-					x_d = R * (Math.cos((Double.valueOf(0.5) * time
+					x_d = Constants.R * (Math.cos((Double.valueOf(0.5) * time
 									.doubleValue()) / 1000)) + x_a;
-					y_d = R * (Math.sin((Double.valueOf(0.5) * time
+					y_d = Constants.R * (Math.sin((Double.valueOf(0.5) * time
 									.doubleValue()) / 1000)) + y_a;
 				} else {
 					x_d = x_a;
@@ -193,30 +180,30 @@ public class ClientTest {
 								+ Math.pow(e_y, 2)))) + Math.exp(-(Math
 								.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
 
-				v = (float) (0.1 * value + CONST_EQ);
+				v = (float) (0.1 * value + Constants.CONST_EQ);
 
 				w = (float) (k_theta * e_theta);
 
-				w_r = (float) ((2 * v + w * L) / (2 * r)); // rad/s
-				w_r = (float) (w_r * RAD_TO_DEG);
+				w_r = (float) ((2 * v + w * Constants.L) / (2 * Constants.r)); // rad/s
+				w_r = (float) (w_r * Constants.RAD_TO_DEG);
 
-				w_l = (float) ((2 * v - w * L) / (2 * r)); // rad/s
-				w_l = (float) (w_l * RAD_TO_DEG);
+				w_l = (float) ((2 * v - w * Constants.L) / (2 * Constants.r)); // rad/s
+				w_l = (float) (w_l * Constants.RAD_TO_DEG);
 
-				MOTOR_RIGTH.setSpeed((float) w_r);
-				MOTOR_RIGTH.forward();
+				Constants.MOTOR_RIGTH.setSpeed((float) w_r);
+				Constants.MOTOR_RIGTH.forward();
 
-				MOTOR_LEFT.setSpeed((float) w_l);
-				MOTOR_LEFT.forward();
+				Constants.MOTOR_LEFT.setSpeed((float) w_l);
+				Constants.MOTOR_LEFT.forward();
 
-				long deg_r = MOTOR_RIGTH.getTachoCount() - prev_deg_r;
-				prev_deg_r = MOTOR_RIGTH.getTachoCount();
+				long deg_r = Constants.MOTOR_RIGTH.getTachoCount() - prev_deg_r;
+				prev_deg_r = Constants.MOTOR_RIGTH.getTachoCount();
 
-				long deg_l = MOTOR_LEFT.getTachoCount() - prev_deg_l;
-				prev_deg_l = MOTOR_LEFT.getTachoCount();
+				long deg_l = Constants.MOTOR_LEFT.getTachoCount() - prev_deg_l;
+				prev_deg_l = Constants.MOTOR_LEFT.getTachoCount();
 
-				D_r = ((2 * Math.PI * r * deg_r) / 360);
-				D_l = ((2 * Math.PI * r * deg_l) / 360);
+				D_r = ((2 * Math.PI * Constants.r * deg_r) / 360);
+				D_l = ((2 * Math.PI * Constants.r * deg_l) / 360);
 				D_c = (D_r + D_l) / 2;
 
 				position = round(x)
@@ -242,17 +229,17 @@ public class ClientTest {
 
 				x = x + (D_c * Math.cos(theta));
 				y = y + (D_c * Math.sin(theta));
-				theta = (theta + ((D_r - D_l) / L));
+				theta = (theta + ((D_r - D_l) / Constants.L));
 
 				semaphore.v();
 			}
 
 			if (flag) {
-				pos = FIM.getBytes();
+				pos = Constants.FIM.getBytes();
 				// dataOut.write(pos);
 				// dataOut.flush();
-				MOTOR_RIGTH.stop();
-				MOTOR_LEFT.stop();
+				Constants.MOTOR_RIGTH.stop();
+				Constants.MOTOR_LEFT.stop();
 			}
 		} catch (IOException e) {
 			System.err.println("Failed to create output stream");
@@ -271,14 +258,14 @@ public class ClientTest {
 			double y_d, double x, double y) {
 		float distance = (float) Math.sqrt(Math.pow((x_d - x), 2)
 				+ Math.pow((y_d - y), 2));
-		if (distance < R_M)
+		if (distance < Constants.R_M)
 			return true;
 		return false;
 	}
 
 	// metodo responsavel por arredondar os valores
 	public static double round(double value) {
-		long factor = (long) Math.pow(10, NUMBER_DECIMAL);
+		long factor = (long) Math.pow(10, Constants.NUMBER_DECIMAL);
 		value = value * factor;
 		long tmp = Math.round(value);
 		return (double) tmp / factor;
