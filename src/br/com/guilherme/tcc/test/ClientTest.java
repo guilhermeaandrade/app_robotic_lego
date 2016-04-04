@@ -17,6 +17,12 @@ public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
 	public static Semaphore semaphore;
 	private static boolean flag = true;
+	
+	private static Double valueController;
+	private static Double coordXInitial;
+	private static Double coordYInitial;
+	private static Double coordXFinal;
+	private static Double coordYFinal;
 
 	// metodo principal
 	public static void main(String[] args) {
@@ -38,8 +44,6 @@ public class ClientTest {
 		while (!Button.ESCAPE.isDown()) {
 			try {
 				command = dataIn.readChar();
-				LCD.clear();
-				LCD.drawString(""+command, 0, 0);
 				if (command == Constants.MANUAL_CONTROL) {
 					flag = false;
 					semaphore.p();
@@ -56,19 +60,15 @@ public class ClientTest {
 					char identify = dataIn.readChar();
 					switch(identify){
 						case 'k':
-							dataIn.readDouble();
-							LCD.clear();
-							LCD.drawString("controlador", 0, 0);
+							valueController = dataIn.readDouble();
 							break;
-						case 'x':
-							dataIn.readDouble();
-							LCD.clear();
-							LCD.drawString("pos ini", 0, 0);
+						case 'i':				
+							coordXInitial = dataIn.readDouble();
+							coordYInitial = dataIn.readDouble();
 							break;
-						case 'v':
-							dataIn.readDouble();
-							LCD.clear();
-							LCD.drawString("pos fin", 0, 0);
+						case 'f':
+							coordXFinal = dataIn.readDouble();
+							coordYFinal = dataIn.readDouble();
 							break;
 					}
 				}
@@ -81,7 +81,7 @@ public class ClientTest {
 
 	// metodo responsavel por realizar o movimento no Robo
 	public static void performMove(char cmd, Double speed) {
-		int velocidade = Integer.parseInt(""+(speed * 9)); // define velocidade
+		int velocidade = 9*speed.intValue(); // define velocidade
 		Constants.MOTOR_RIGTH.setSpeed(velocidade);
 		Constants.MOTOR_LEFT.setSpeed(velocidade);
 		switch (cmd) {
@@ -111,11 +111,10 @@ public class ClientTest {
 	// metodo responsavel por realizar movimento manual
 	public static void executeMoveManual(DataInputStream in) {
 		char letra = 0;
-		Double speed = 0.0;
+		Double speed = 0d;
 		try {
 			letra = in.readChar();
 			speed = in.readDouble();
-			LCD.clear();
 		} catch (IOException e) {
 			e.getMessage();
 		}
