@@ -29,57 +29,69 @@ public class ClientTest {
 		char command = 0;
 		semaphore = new Semaphore(1);
 
-		LCD.drawString("Esperando", 0, 0);
-		NXTConnection conexao = Bluetooth.waitForConnection();
-		// configurando a conxão para se comunicar com dispositivos móveis, como
-		// um celular Android
-		conexao.setIOMode(NXTConnection.RAW);
-		// fluxo de entrada de dados
-		DataInputStream dataIn = conexao.openDataInputStream();
-		DataOutputStream dataOut = conexao.openDataOutputStream();
+		NXTConnection conexao = null;
+		DataInputStream dataIn = null;
+		DataOutputStream dataOut = null;
+		
+		while(true){
+			LCD.drawString("Esperando", 0, 0);
+			conexao = Bluetooth.waitForConnection();
+			
+			// configurando a conxão para se comunicar com dispositivos móveis, como um celular Android
+			conexao.setIOMode(NXTConnection.RAW);
+			
+			// fluxo de entrada de dados
+			dataIn = conexao.openDataInputStream();
+			dataOut = conexao.openDataOutputStream();
 
-		LCD.clear(); // limpando e tela
-		LCD.drawString("Conectado", 0, 0);
+			LCD.clear(); // limpando e tela
+			LCD.drawString("Conectado", 0, 0);
 
-		while (!Button.ESCAPE.isDown()) {
-			try {
-				command = dataIn.readChar();
-				if (command == Constants.MANUAL_CONTROL) {
-					flag = false;
-					semaphore.p();
-					executeMoveManual(dataIn);
-					semaphore.v();
-				}
-				if (command == Constants.AUTO_CONTROL) {
-					flag = true;
-					dataIn.readChar();
-					dataIn.readDouble();
-					new ControlThread(dataOut).start();
-				}
-				if (command == Constants.C_SETTINGS) {
-					char identify = dataIn.readChar();
-					switch(identify){
-						case 'k':
-							valueController = dataIn.readDouble();
-							break;
-						case 'i':				
-							coordXInitial = dataIn.readDouble();
-							coordYInitial = dataIn.readDouble();
-							break;
-						case 'f':
-							coordXFinal = dataIn.readDouble();
-							coordYFinal = dataIn.readDouble();
-							break;
+			while (!Button.ESCAPE.isDown()) {
+				try {
+					command = dataIn.readChar();
+					if (command == Constants.MANUAL_CONTROL) {
+						flag = false;
+						semaphore.p();
+						executeMoveManual(dataIn);
+						semaphore.v();
 					}
+					if (command == Constants.AUTO_CONTROL) {
+						flag = true;
+						dataIn.readChar();
+						dataIn.readDouble();
+						new ControlThread(dataOut).start();
+					}
+					if (command == Constants.C_SETTINGS) {
+						char identify = dataIn.readChar();
+						switch(identify){
+							case 'k':
+								valueController = dataIn.readDouble();
+								break;
+							case 'i':				
+								coordXInitial = dataIn.readDouble();
+								coordYInitial = dataIn.readDouble();
+								break;
+							case 'f':
+								coordXFinal = dataIn.readDouble();
+								coordYFinal = dataIn.readDouble();
+								break;
+						}
+					}
+					if (command == Constants.C_STOP_CONNECTION) {
+						dataIn.readChar();
+						dataIn.readDouble();
+						
+						dataIn.close();
+						dataOut.close();
+						conexao.close();
+						
+						break;
+					}
+				} catch (IOException e) {
+					LCD.clear();
+					LCD.drawString(e.getMessage().toString(), 0, 0);
 				}
-				if (command == Constants.C_STOP_CONNECTION) {
-					LCD.drawString("comm: "+command, 0, 5);
-					dataIn.readChar();
-					dataIn.readDouble();
-				}
-			} catch (IOException e) {
-				LCD.clear();
-				LCD.drawString(e.getMessage().toString(), 0, 0);
 			}
 		}
 	}
