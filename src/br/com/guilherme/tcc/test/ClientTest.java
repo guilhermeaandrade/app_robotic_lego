@@ -18,11 +18,11 @@ public class ClientTest {
 	public static Semaphore semaphore;
 	private static boolean flag = true;
 	
-	private static Double valueController;
-	private static Double coordXInitial;
-	private static Double coordYInitial;
-	private static Double coordXFinal;
-	private static Double coordYFinal;
+	private static Double k_theta = 1.35;
+	private static Double x = 0d;
+	private static Double y = 0d;
+	private static Double x_a = 0d;
+	private static Double y_a = 0d;
 
 	// metodo principal
 	public static void main(String[] args) {
@@ -66,15 +66,15 @@ public class ClientTest {
 						char identify = dataIn.readChar();
 						switch(identify){
 							case 'k':
-								valueController = dataIn.readDouble();
+								k_theta = dataIn.readDouble();
 								break;
 							case 'i':				
-								coordXInitial = dataIn.readDouble();
-								coordYInitial = dataIn.readDouble();
+								x = dataIn.readDouble();
+								y = dataIn.readDouble();
 								break;
 							case 'f':
-								coordXFinal = dataIn.readDouble();
-								coordYFinal = dataIn.readDouble();
+								x_a = dataIn.readDouble();
+								y_a = dataIn.readDouble();
 								break;
 						}
 					}
@@ -85,6 +85,10 @@ public class ClientTest {
 						dataIn.close();
 						dataOut.close();
 						conexao.close();
+						
+						dataIn = null;
+						dataOut = null;
+						conexao = null;
 						
 						break;
 					}
@@ -147,16 +151,13 @@ public class ClientTest {
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 
-		Double x = 0.0, y = 0.0, theta = Math.PI;// 0.0;
-		Double x_a = 0.9, y_a = 0.9;
-
+		Double theta = Math.PI;
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
 
 		Double D_l, D_r, D_c;
 		float v, w, w_r, w_l;
-		float k_theta = 1.35f;
-
+		
 		FileOutputStream out = null;
 		File data = null;
 		try {
@@ -240,8 +241,8 @@ public class ClientTest {
 				out.write("\n".getBytes());
 				out.flush();
 
-				// dataOut.write(pos);
-				// dataOut.flush();
+				dataOut.write(pos);
+				dataOut.flush();
 
 				x = x + (D_c * Math.cos(theta));
 				y = y + (D_c * Math.sin(theta));
@@ -252,8 +253,8 @@ public class ClientTest {
 
 			if (flag) {
 				pos = Constants.FIM.getBytes();
-				// dataOut.write(pos);
-				// dataOut.flush();
+				dataOut.write(pos);
+				dataOut.flush();
 				Constants.MOTOR_RIGTH.stop();
 				Constants.MOTOR_LEFT.stop();
 			}
