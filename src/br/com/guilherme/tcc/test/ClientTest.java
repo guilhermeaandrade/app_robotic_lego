@@ -23,6 +23,9 @@ public class ClientTest {
 	private static Double y = 0d;
 	private static Double x_a = 0d;
 	private static Double y_a = 0d;
+	private static long prev_deg_r_manual = 0;
+	private static long prev_deg_l_manual = 0;
+	private static Double theta_manual = 0d;
 
 	// metodo principal
 	public static void main(String[] args) {
@@ -32,6 +35,9 @@ public class ClientTest {
 		NXTConnection conexao = null;
 		DataInputStream dataIn = null;
 		DataOutputStream dataOut = null;
+		
+		FileOutputStream fous = null;
+		File file = null;
 		
 		while(true){
 			LCD.drawString("Esperando", 0, 0);
@@ -46,86 +52,184 @@ public class ClientTest {
 
 			LCD.clear(); // limpando e tela
 			LCD.drawString("Conectado", 0, 0);
-
-			while (!Button.ESCAPE.isDown()) {
-				try {
-					command = dataIn.readChar();
-					if (command == Constants.MANUAL_CONTROL) {
-						flag = false;
-						semaphore.p();
-						executeMoveManual(dataIn);
-						semaphore.v();
-					}
-					if (command == Constants.AUTO_CONTROL) {
-						flag = true;
-						dataIn.readChar();
-						dataIn.readDouble();
-						new ControlThread(dataOut).start();
-					}
-					if (command == Constants.C_SETTINGS) {
-						char identify = dataIn.readChar();
-						switch(identify){
-							case 'k':
-								k_theta = dataIn.readDouble();
-								break;
-							case 'i':				
-								x = dataIn.readDouble();
-								y = dataIn.readDouble();
-								break;
-							case 'f':
-								x_a = dataIn.readDouble();
-								y_a = dataIn.readDouble();
-								break;
-						}
-					}
-					if (command == Constants.C_STOP_CONNECTION) {
-						dataIn.readChar();
-						dataIn.readDouble();
-						
-						dataIn.close();
-						dataOut.close();
-						conexao.close();
-						
-						dataIn = null;
-						dataOut = null;
-						conexao = null;
-						
-						break;
-					}
-				} catch (IOException e) {
-					LCD.clear();
-					LCD.drawString(e.getMessage().toString(), 0, 0);
+			
+			String commands = null;
+			byte[] pos = null;
+			
+			try {
+				file = new File("test.txt");
+				if(file.exists()){
+					file.delete();
+					file.createNewFile();
 				}
+				fous = new FileOutputStream(file);
+				
+				while (!Button.ESCAPE.isDown()) {
+					try {
+						command = dataIn.readChar();
+						
+						commands = ""+command;
+					
+						if (command == Constants.MANUAL_CONTROL) {
+							flag = false;
+							semaphore.p();
+							executeMoveManual(dataIn);
+							semaphore.v();
+						}
+						if (command == Constants.AUTO_CONTROL) {
+							flag = true;
+							dataIn.readChar();
+							dataIn.readDouble();
+							new ControlThread(dataOut).start();
+						}
+						
+						
+						pos = commands.getBytes();
+						fous.write(pos);
+						fous.flush();
+						
+						
+						if (command == Constants.C_SETTINGS) {
+							char identify = dataIn.readChar();
+							switch(identify){
+								case 'k':
+									k_theta = dataIn.readDouble();
+									break;
+								case 'i':				
+									x = dataIn.readDouble();
+									y = dataIn.readDouble();
+									break;
+								case 'f':
+									x_a = dataIn.readDouble();
+									y_a = dataIn.readDouble();
+									break;
+							}
+						}
+						if (command == Constants.C_STOP_CONNECTION) {
+							dataIn.readChar();
+							dataIn.readDouble();
+							
+							if(dataIn != null) dataIn.close();
+							if(dataOut != null) dataOut.close();
+							if(conexao != null) conexao.close();
+							
+							dataIn = null;
+							dataOut = null;
+							conexao = null;
+							
+							break;
+						}
+					} catch (IOException e) {
+						LCD.clear();
+						LCD.drawString("Deu erro: "+e.getCause().toString(), 0, 0);
+					}
+				}
+				fous.close();
+			}catch(IOException e) {
+				e.printStackTrace();
 			}
 		}
 	}
 
 	// metodo responsavel por realizar o movimento no Robo
 	public static void performMove(char cmd, Double speed) {
-		int velocidade = 9*speed.intValue(); // define velocidade
+		int velocidade;
+		if(speed < 0) velocidade = 20;
+		velocidade = Constants.MUL_CONST*speed.intValue(); // define velocidade
+		
 		Constants.MOTOR_RIGTH.setSpeed(velocidade);
 		Constants.MOTOR_LEFT.setSpeed(velocidade);
+		
 		switch (cmd) {
 			case Constants.FWD:
 				Constants.MOTOR_RIGTH.forward();
 				Constants.MOTOR_LEFT.forward();
+				trackManualControl();
 				break;
+				
 			case Constants.BWD:
 				Constants.MOTOR_RIGTH.backward();
 				Constants.MOTOR_LEFT.backward();
+				trackManualControl();	
 				break;
+				
 			case Constants.LEFT:
 				Constants.MOTOR_RIGTH.forward();
 				Constants.MOTOR_LEFT.backward();
+				trackManualControl();
 				break;
+				
 			case Constants.RIGHT:
 				Constants.MOTOR_RIGTH.backward();
 				Constants.MOTOR_LEFT.forward();
+				trackManualControl();
 				break;
+			
 			case Constants.STOP:
 				Constants.MOTOR_RIGTH.stop();
 				Constants.MOTOR_LEFT.stop();
 				break;
+		}
+	}
+
+	//metodo responsavel por realizar rastreio manual
+	private static void trackManualControl() {
+		String position = null;
+		byte[] pos = null;
+		FileOutputStream fous = null;
+		File file = null;
+		
+		long deg_r = 0;
+		long deg_l = 0;
+		
+		Double D_l;
+		Double D_r;
+		Double D_c;
+		
+		try {
+			file = new File("log.txt");
+			if(file.exists()){
+				file.delete();
+				file.createNewFile();
+			}
+			fous = new FileOutputStream(file);
+			
+			position = round(x)+ "," + round(y)+ ","+ round(theta_manual)+","+deg_r+","+deg_l;
+			pos = position.getBytes();
+
+			fous.write(pos);
+			fous.write("#".getBytes());
+			fous.flush();
+			
+			deg_r = Constants.MOTOR_RIGTH.getTachoCount() - prev_deg_r_manual;
+			prev_deg_r_manual = Constants.MOTOR_RIGTH.getTachoCount();
+			
+			deg_l = Constants.MOTOR_LEFT.getTachoCount() - prev_deg_l_manual;
+			prev_deg_l_manual = Constants.MOTOR_LEFT.getTachoCount();
+			
+			D_r = ((2 * Math.PI * Constants.r * deg_r) / 360);
+			D_l = ((2 * Math.PI * Constants.r * deg_l) / 360);
+			D_c = (D_r + D_l) / 2;
+
+			x = x + (D_c * Math.cos(theta_manual));
+			y = y + (D_c * Math.sin(theta_manual));
+			theta_manual = (theta_manual + ((D_r - D_l) / Constants.L));
+			
+			position = round(x)+ "," + round(y)+ ","+ round(theta_manual)+","+deg_r+","+deg_l;
+			pos = position.getBytes();
+
+			fous.write(pos);
+			fous.write("#".getBytes());
+			fous.flush();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			fous.close();
+		} catch (Exception e) {
+			e.getMessage();
 		}
 	}
 
@@ -167,8 +271,8 @@ public class ClientTest {
 				data.createNewFile();
 			}
 			out = new FileOutputStream(data);
-
-			while (System.currentTimeMillis() - t0 <= 37700 && flag) {
+			
+			while (System.currentTimeMillis() - t0 <= 35000 && flag) {
 				semaphore.p();
 				
 				time = System.currentTimeMillis() - t0;
@@ -243,7 +347,7 @@ public class ClientTest {
 
 				dataOut.write(pos);
 				dataOut.flush();
-
+					
 				x = x + (D_c * Math.cos(theta));
 				y = y + (D_c * Math.sin(theta));
 				theta = (theta + ((D_r - D_l) / Constants.L));

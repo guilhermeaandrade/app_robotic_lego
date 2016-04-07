@@ -20,6 +20,7 @@ public class Constants {
 	public static final Double CONST_FREQ = 0.3;
 	public static final String FIM = "fim";
 	public static final int NUMBER_DECIMAL = 7;
+	public static final Integer MUL_CONST = 4;
 
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
