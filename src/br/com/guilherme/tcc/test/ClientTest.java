@@ -12,6 +12,7 @@ import lejos.nxt.comm.Bluetooth;
 import lejos.nxt.comm.NXTConnection;
 import br.com.guilherme.tcc.utils.Constants;
 import br.com.guilherme.tcc.utils.Semaphore;
+import br.com.guilherme.tcc.utils.Time;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
@@ -26,12 +27,15 @@ public class ClientTest {
 	private static long prev_deg_r_manual = 0;
 	private static long prev_deg_l_manual = 0;
 	private static Double theta = 0d;
-
+	private static Time time;
+	
 	// metodo principal
 	public static void main(String[] args) {
 		char command = 0;
 		semaphore = new Semaphore(1);
-
+		
+		time = new Time();
+		
 		NXTConnection conexao = null;
 		DataInputStream dataIn = null;
 		DataOutputStream dataOut = null;
@@ -74,12 +78,14 @@ public class ClientTest {
 					fous.flush();
 					
 					if (command == Constants.MANUAL_CONTROL) {
+						time.setTime();
 						flag = false;
 						semaphore.p();
 						executeMoveManual(dataIn, dataOut);
 						semaphore.v();
 					}
 					if (command == Constants.AUTO_CONTROL) {
+						time.setTime();
 						flag = true;
 						dataIn.readChar();
 						dataIn.readDouble();
@@ -183,6 +189,7 @@ public class ClientTest {
 		long deg_r = 0;
 		long deg_l = 0;
 
+		Double e_x, e_y;
 		Double D_l;
 		Double D_r;
 		Double D_c;
@@ -203,9 +210,23 @@ public class ClientTest {
 			fous.write("#".getBytes());
 			fous.flush();
 
+			e_x = x_a - x;
+			e_y = y_a - y;
+			
 			//envia informações para o dispositivo
-			information = round(x) + "," + round(y) + "," + round(theta)
-					+ "," + velocidade.doubleValue();
+			information = round(x) 
+					+ "," 
+					+ round(y) 
+					+ "," 
+					+ round(theta)
+					+ "," 
+					+ velocidade.doubleValue() 
+					+ ","
+					+ 0d
+					+ ","
+					+ round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+					+ "," + time.getTimeNow();;
+			
 			info = information.getBytes();
 			out.write(info);
 			out.flush();
@@ -259,7 +280,7 @@ public class ClientTest {
 	public static void doControl(DataOutputStream dataOut) {
 		String position = null;
 		byte[] pos = null;
-		Long time = new Long(0);
+		Long timeControl = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
@@ -284,14 +305,14 @@ public class ClientTest {
 			while (System.currentTimeMillis() - t0 <= 35000 && flag) {
 				semaphore.p();
 
-				time = System.currentTimeMillis() - t0;
+				timeControl = System.currentTimeMillis() - t0;
 
 				if (checkIfPointBelongsCircumference(x_a, y_a, x, y)) {
 					x_d = Constants.R
-							* (Math.cos((Double.valueOf(0.5) * time
+							* (Math.cos((Double.valueOf(0.5) * timeControl
 									.doubleValue()) / 1000)) + x_a;
 					y_d = Constants.R
-							* (Math.sin((Double.valueOf(0.5) * time
+							* (Math.sin((Double.valueOf(0.5) * timeControl
 									.doubleValue()) / 1000)) + y_a;
 				} else {
 					x_d = x_a;
@@ -349,7 +370,8 @@ public class ClientTest {
 						+ round(w)
 						+ ","
 						+ round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-						+ "," + (time / 1000.0000);
+						//+ "," + (timeControl / 1000.0000);
+						+ "," + time.getTimeNow();
 				pos = position.getBytes();
 
 				out.write(pos);
