@@ -13,6 +13,7 @@ import lejos.nxt.comm.NXTConnection;
 import br.com.guilherme.tcc.utils.Constants;
 import br.com.guilherme.tcc.utils.Semaphore;
 import br.com.guilherme.tcc.utils.Time;
+import br.com.guilherme.tcc.utils.Utils;
 
 public class ClientTest {
 	// DEFINIÇÃO DE VARIÁVEIS PARA APLICAÇÃO
@@ -28,20 +29,17 @@ public class ClientTest {
 	private static long prev_deg_l_manual = 0;
 	private static Double theta = 0d;
 	private static Time time;
-	
+
 	// metodo principal
 	public static void main(String[] args) {
 		char command = 0;
 		semaphore = new Semaphore(1);
-		
+
 		time = new Time();
-		
+
 		NXTConnection conexao = null;
 		DataInputStream dataIn = null;
 		DataOutputStream dataOut = null;
-
-		FileOutputStream fous = null;
-		File file = null;
 
 		LCD.drawString("Esperando", 0, 0);
 		conexao = Bluetooth.waitForConnection();
@@ -57,81 +55,61 @@ public class ClientTest {
 		LCD.clear(); // limpando e tela
 		LCD.drawString("Conectado", 0, 0);
 
-		String commands = null;
-		byte[] pos = null;
+		while (!Button.ESCAPE.isDown()) {
+			try {
+				command = dataIn.readChar();
 
-		try {
-			file = new File("test.txt");
-			if (file.exists()) {
-				file.delete();
-				file.createNewFile();
-			}
-			fous = new FileOutputStream(file);
-
-			while (!Button.ESCAPE.isDown()) {
-				try {
-					command = dataIn.readChar();
-
-					commands = "" + command;
-					pos = commands.getBytes();
-					fous.write(pos);
-					fous.flush();
-					
-					if (command == Constants.MANUAL_CONTROL) {
-						time.setTime();
-						flag = false;
-						semaphore.p();
-						executeMoveManual(dataIn, dataOut);
-						semaphore.v();
-					}
-					if (command == Constants.AUTO_CONTROL) {
-						time.setTime();
-						flag = true;
-						dataIn.readChar();
-						dataIn.readDouble();
-						new ControlThread(dataOut).start();
-					}
-					if (command == Constants.C_SETTINGS) {
-						char identify = dataIn.readChar();
-						switch (identify) {
-						case 'k':
-							k_theta = dataIn.readDouble();
-							break;
-						case 'i':
-							x = dataIn.readDouble();
-							y = dataIn.readDouble();
-							break;
-						case 'f':
-							x_a = dataIn.readDouble();
-							y_a = dataIn.readDouble();
-							break;
-						}
-					}
-					if (command == Constants.C_STOP_CONNECTION) {
-						dataIn.readChar();
-						dataIn.readDouble();
-
-						if (dataIn != null)
-							dataIn.close();
-						if (dataOut != null)
-							dataOut.close();
-						if (conexao != null)
-							conexao.close();
-
-						dataIn = null;
-						dataOut = null;
-						conexao = null;
-
+				if (command == Constants.MANUAL_CONTROL) {
+					time.setTime();
+					flag = false;
+					semaphore.p();
+					executeMoveManual(dataIn, dataOut);
+					semaphore.v();
+				}
+				if (command == Constants.AUTO_CONTROL) {
+					time.setTime();
+					flag = true;
+					dataIn.readChar();
+					dataIn.readDouble();
+					new ControlThread(dataOut).start();
+				}
+				if (command == Constants.C_SETTINGS) {
+					char identify = dataIn.readChar();
+					switch (identify) {
+					case 'k':
+						k_theta = dataIn.readDouble();
+						break;
+					case 'i':
+						x = dataIn.readDouble();
+						y = dataIn.readDouble();
+						break;
+					case 'f':
+						x_a = dataIn.readDouble();
+						y_a = dataIn.readDouble();
 						break;
 					}
-				} catch (IOException e) {
-					LCD.clear();
-					LCD.drawString("Deu erro: " + e.getCause().toString(), 0, 0);
 				}
+				if (command == Constants.C_STOP_CONNECTION) {
+					dataIn.readChar();
+					dataIn.readDouble();
+
+					if (dataIn != null)
+						dataIn.close();
+					if (dataOut != null)
+						dataOut.close();
+					if (conexao != null)
+						conexao.close();
+
+					dataIn = null;
+					dataOut = null;
+					conexao = null;
+
+					break;
+				}
+			} catch (IOException e) {
+				LCD.clear();
+				LCD.drawString("Deu erro: " + e.getCause().toString(), 0, 0);
 			}
-			fous.close();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -178,7 +156,8 @@ public class ClientTest {
 	}
 
 	// metodo responsavel por realizar rastreio manual
-	private static void trackManualControl(Integer velocidade, DataOutputStream out) {
+	private static void trackManualControl(Integer velocidade,
+			DataOutputStream out) {
 		String position = null;
 		String information = null;
 		byte[] pos = null;
@@ -202,9 +181,9 @@ public class ClientTest {
 			}
 			fous = new FileOutputStream(file);
 
-			//armazena informações no arquivo
-			position = round(x) + "," + round(y) + "," + round(theta)
-					+ "," + deg_r + "," + deg_l;
+			// armazena informações no arquivo
+			position = Utils.round(x) + "," + Utils.round(y) + "," + Utils.round(theta) + ","
+					+ deg_r + "," + deg_l;
 			pos = position.getBytes();
 			fous.write(pos);
 			fous.write("#".getBytes());
@@ -212,25 +191,17 @@ public class ClientTest {
 
 			e_x = x_a - x;
 			e_y = y_a - y;
-			
-			//envia informações para o dispositivo
-			information = round(x) 
-					+ "," 
-					+ round(y) 
-					+ "," 
-					+ round(theta)
-					+ "," 
-					+ velocidade.doubleValue() 
-					+ ","
-					+ 0d
-					+ ","
-					+ round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-					+ "," + time.getTimeNow();;
-			
+
+			// envia informações para o dispositivo
+			information = Utils.round(x) + "," + Utils.round(y) + "," + Utils.round(theta) + ","
+					+ velocidade.doubleValue() + "," + 0d + ","
+					+ Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+					+ "," + time.getTimeNow() + "," + Constants.OPT_MANUAL;
+
 			info = information.getBytes();
 			out.write(info);
 			out.flush();
-			
+
 			deg_r = Constants.MOTOR_RIGTH.getTachoCount() - prev_deg_r_manual;
 			prev_deg_r_manual = Constants.MOTOR_RIGTH.getTachoCount();
 
@@ -241,13 +212,13 @@ public class ClientTest {
 			D_l = ((2 * Math.PI * Constants.r * deg_l) / 360);
 			D_c = (D_r + D_l) / 2;
 
-			position = round(x) + "," + round(y) + "," + round(theta)
-					+ "," + deg_r + "," + deg_l;
+			position = Utils.round(x) + "," + Utils.round(y) + "," + Utils.round(theta) + ","
+					+ deg_r + "," + deg_l;
 			pos = position.getBytes();
 			fous.write(pos);
 			fous.write("#".getBytes());
 			fous.flush();
-			
+
 			x = x + (D_c * Math.cos(theta));
 			y = y + (D_c * Math.sin(theta));
 			theta = (theta + ((D_r - D_l) / Constants.L));
@@ -264,7 +235,8 @@ public class ClientTest {
 	}
 
 	// metodo responsavel por realizar movimento manual
-	public static void executeMoveManual(DataInputStream in, DataOutputStream out) {
+	public static void executeMoveManual(DataInputStream in,
+			DataOutputStream out) {
 		char letra = 0;
 		Double speed = 0d;
 		try {
@@ -285,12 +257,11 @@ public class ClientTest {
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 
-		//Double theta = Math.PI;
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
 
 		Double D_l, D_r, D_c;
-		float v, w, w_r, w_l;
+		Float v, w, w_r, w_l;
 
 		FileOutputStream out = null;
 		File data = null;
@@ -307,7 +278,7 @@ public class ClientTest {
 
 				timeControl = System.currentTimeMillis() - t0;
 
-				if (checkIfPointBelongsCircumference(x_a, y_a, x, y)) {
+				if (Utils.checkIfPointBelongsCircumference(x_a, y_a, x, y)) {
 					x_d = Constants.R
 							* (Math.cos((Double.valueOf(0.5) * timeControl
 									.doubleValue()) / 1000)) + x_a;
@@ -359,21 +330,21 @@ public class ClientTest {
 				D_l = ((2 * Math.PI * Constants.r * deg_l) / 360);
 				D_c = (D_r + D_l) / 2;
 
-				position = round(x)
+				position = Utils.round(x)
 						+ ","
-						+ round(y)
+						+ Utils.round(y)
 						+ ","
-						+ round(theta)
+						+ Utils.round(theta)
 						+ ","
-						+ round(v)
+						+ Utils.round(v.doubleValue())
 						+ ","
-						+ round(w)
+						+ Utils.round(w.doubleValue())
 						+ ","
-						+ round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-						//+ "," + (timeControl / 1000.0000);
-						+ "," + time.getTimeNow();
-				pos = position.getBytes();
+						+ Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+						+ "," + time.getTimeNow() + ","
+						+ Constants.OPT_AUTOMATIC;
 
+				pos = position.getBytes();
 				out.write(pos);
 				out.write("\n".getBytes());
 				out.flush();
@@ -405,25 +376,6 @@ public class ClientTest {
 			System.err.println("Failed to close output stream");
 			System.exit(1);
 		}
-	}
-
-	// metodo responsavel por realizar verificação se ponto encontra-se entre
-	// dois raios
-	public static boolean checkIfPointBelongsCircumference(double x_d,
-			double y_d, double x, double y) {
-		float distance = (float) Math.sqrt(Math.pow((x_d - x), 2)
-				+ Math.pow((y_d - y), 2));
-		if (distance < Constants.R_M)
-			return true;
-		return false;
-	}
-
-	// metodo responsavel por arredondar os valores
-	public static double round(double value) {
-		long factor = (long) Math.pow(10, Constants.NUMBER_DECIMAL);
-		value = value * factor;
-		long tmp = Math.round(value);
-		return (double) tmp / factor;
 	}
 
 	// thread responsavel pelo controle automatico

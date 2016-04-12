@@ -17,6 +17,6 @@ public class Time {
 	}
 	
 	public Double getTimeNow(){
-		return (System.currentTimeMillis() - startTime / 1000.0000);
+		return ((System.currentTimeMillis() - startTime) / 1000.0000);
 	}
 }

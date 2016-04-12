@@ -21,6 +21,8 @@ public class Constants {
 	public static final String FIM = "fim";
 	public static final int NUMBER_DECIMAL = 7;
 	public static final Integer MUL_CONST = 4;
+	public static final Integer OPT_MANUAL = 1;
+	public static final Integer OPT_AUTOMATIC = 0;
 
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
