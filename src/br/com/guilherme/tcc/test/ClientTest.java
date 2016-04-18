@@ -20,7 +20,8 @@ public class ClientTest {
 	public static Semaphore semaphore;
 	private static boolean flag = true;
 
-	private static Double k_theta = 1.35;
+	private static Double k_p = 1.35;
+	private static Double k_i = 0.00;
 	private static Double x = 0d;
 	private static Double y = 0d;
 	private static Double x_a = 0d;
@@ -41,74 +42,72 @@ public class ClientTest {
 		DataInputStream dataIn = null;
 		DataOutputStream dataOut = null;
 
-		LCD.drawString("Esperando", 0, 0);
-		conexao = Bluetooth.waitForConnection();
+		while (true) {
+			LCD.drawString("Esperando", 0, 0);
+			conexao = Bluetooth.waitForConnection();
 
-		// configurando a conxão para se comunicar com dispositivos móveis, como
-		// um celular Android
-		conexao.setIOMode(NXTConnection.RAW);
+			// configurando a conxão para se comunicar com dispositivos móveis,
+			// como
+			// um celular Android
+			conexao.setIOMode(NXTConnection.RAW);
 
-		// fluxo de entrada de dados
-		dataIn = conexao.openDataInputStream();
-		dataOut = conexao.openDataOutputStream();
+			// fluxo de entrada de dados
+			dataIn = conexao.openDataInputStream();
+			dataOut = conexao.openDataOutputStream();
 
-		LCD.clear(); // limpando e tela
-		LCD.drawString("Conectado", 0, 0);
+			LCD.clear(); // limpando e tela
+			LCD.drawString("Conectado", 0, 0);
 
-		while (!Button.ESCAPE.isDown()) {
-			try {
-				command = dataIn.readChar();
+			while (!Button.ESCAPE.isDown()) {
+				try {
+					command = dataIn.readChar();
 
-				if (command == Constants.MANUAL_CONTROL) {
-					time.setTime();
-					flag = false;
-					semaphore.p();
-					executeMoveManual(dataIn, dataOut);
-					semaphore.v();
-				}
-				if (command == Constants.AUTO_CONTROL) {
-					time.setTime();
-					flag = true;
-					dataIn.readChar();
-					dataIn.readDouble();
-					new ControlThread(dataOut).start();
-				}
-				if (command == Constants.C_SETTINGS) {
-					char identify = dataIn.readChar();
-					switch (identify) {
-					case 'k':
-						k_theta = dataIn.readDouble();
-						break;
-					case 'i':
-						x = dataIn.readDouble();
-						y = dataIn.readDouble();
-						break;
-					case 'f':
-						x_a = dataIn.readDouble();
-						y_a = dataIn.readDouble();
+					if (command == Constants.MANUAL_CONTROL) {
+						time.setTime();
+						flag = false;
+						semaphore.p();
+						executeMoveManual(dataIn, dataOut);
+						semaphore.v();
+					}
+					if (command == Constants.AUTO_CONTROL) {
+						time.setTime();
+						flag = true;
+						dataIn.readChar();
+						dataIn.readDouble();
+						new ControlThread(dataOut).start();
+					}
+					if (command == Constants.C_SETTINGS) {
+						char identify = dataIn.readChar();
+						switch (identify) {
+						case 'k':
+							k_p = dataIn.readDouble();
+							k_i = dataIn.readDouble();
+							break;
+						case 'i':
+							x = dataIn.readDouble();
+							y = dataIn.readDouble();
+							break;
+						case 'f':
+							x_a = dataIn.readDouble();
+							y_a = dataIn.readDouble();
+							break;
+						}
+					}
+					if (command == Constants.C_STOP_CONNECTION) {
+						dataIn.readChar();
+						dataIn.readDouble();
+						
+						dataIn = null;
+						dataOut = null;
+						conexao = null;
+
 						break;
 					}
+				} catch (IOException e) {
+					LCD.clear();
+					LCD.drawString("Deu erro: " + e.getCause().toString(), 0, 0);
+					// System.exit(1);
 				}
-				if (command == Constants.C_STOP_CONNECTION) {
-					dataIn.readChar();
-					dataIn.readDouble();
-
-					if (dataIn != null)
-						dataIn.close();
-					if (dataOut != null)
-						dataOut.close();
-					if (conexao != null)
-						conexao.close();
-
-					dataIn = null;
-					dataOut = null;
-					conexao = null;
-
-					break;
-				}
-			} catch (IOException e) {
-				LCD.clear();
-				LCD.drawString("Deu erro: " + e.getCause().toString(), 0, 0);
 			}
 		}
 	}
@@ -182,8 +181,8 @@ public class ClientTest {
 			fous = new FileOutputStream(file);
 
 			// armazena informações no arquivo
-			position = Utils.round(x) + "," + Utils.round(y) + "," + Utils.round(theta) + ","
-					+ deg_r + "," + deg_l;
+			position = Utils.round(x) + "," + Utils.round(y) + ","
+					+ Utils.round(theta) + "," + deg_r + "," + deg_l;
 			pos = position.getBytes();
 			fous.write(pos);
 			fous.write("#".getBytes());
@@ -193,10 +192,19 @@ public class ClientTest {
 			e_y = y_a - y;
 
 			// envia informações para o dispositivo
-			information = Utils.round(x) + "," + Utils.round(y) + "," + Utils.round(theta) + ","
-					+ velocidade.doubleValue() + "," + 0d + ","
-					+ Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-					+ "," + time.getTimeNow() + "," + Constants.OPT_MANUAL;
+			information = Utils.round(x)
+					+ ","
+					+ Utils.round(y)
+					+ ","
+					+ Utils.round(theta)
+					+ ","
+					+ velocidade.doubleValue()
+					+ ","
+					+ 0d
+					+ ","
+					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
+							+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+					+ "," + Constants.OPT_MANUAL;
 
 			info = information.getBytes();
 			out.write(info);
@@ -212,8 +220,8 @@ public class ClientTest {
 			D_l = ((2 * Math.PI * Constants.r * deg_l) / 360);
 			D_c = (D_r + D_l) / 2;
 
-			position = Utils.round(x) + "," + Utils.round(y) + "," + Utils.round(theta) + ","
-					+ deg_r + "," + deg_l;
+			position = Utils.round(x) + "," + Utils.round(y) + ","
+					+ Utils.round(theta) + "," + deg_r + "," + deg_l;
 			pos = position.getBytes();
 			fous.write(pos);
 			fous.write("#".getBytes());
@@ -224,13 +232,17 @@ public class ClientTest {
 			theta = (theta + ((D_r - D_l) / Constants.L));
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			LCD.clear();
+			LCD.drawString("Falha trackManualControl", 0, 0);
+			// System.exit(1);
 		}
 
 		try {
 			fous.close();
 		} catch (Exception e) {
-			e.getMessage();
+			LCD.clear();
+			LCD.drawString("Falha fechar arquivo", 0, 0);
+			// System.exit(1);
 		}
 	}
 
@@ -242,10 +254,12 @@ public class ClientTest {
 		try {
 			letra = in.readChar();
 			speed = in.readDouble();
+			performMove(letra, speed, out);
 		} catch (IOException e) {
-			e.getMessage();
+			LCD.clear();
+			LCD.drawString("Falha executeMoveManual", 0, 0);
+			// System.exit(1);
 		}
-		performMove(letra, speed, out);
 	}
 
 	// metodo reponsavel por realizar o controle sobre o robo
@@ -262,6 +276,7 @@ public class ClientTest {
 
 		Double D_l, D_r, D_c;
 		Float v, w, w_r, w_l;
+		Float C_i = 0.0f, C_p;
 
 		FileOutputStream out = null;
 		File data = null;
@@ -306,7 +321,17 @@ public class ClientTest {
 
 				v = (float) (0.1 * value + Constants.CONST_EQ);
 
-				w = (float) (k_theta * e_theta);
+				// Wk = Ci(k) + Cp(k)
+				// Ci(k) = Ci(k-1) + k_i*T.e
+				C_p = (float) (k_p * e_theta);
+				C_i = (float) (C_i + (k_i * (timeControl / 1000) * e_theta));
+				if (C_i > 100)
+					C_i = 100f;
+				if (C_i < -100)
+					C_i = -100f;
+				w = C_i + C_p;
+
+				// w = (float) (k_p * e_theta);
 
 				w_r = (float) ((2 * v + w * Constants.L) / (2 * Constants.r)); // rad/s
 				w_r = (float) (w_r * Constants.RAD_TO_DEG);
@@ -340,9 +365,9 @@ public class ClientTest {
 						+ ","
 						+ Utils.round(w.doubleValue())
 						+ ","
-						+ Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-						+ "," + time.getTimeNow() + ","
-						+ Constants.OPT_AUTOMATIC;
+						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
+								+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+						+ "," + Constants.OPT_AUTOMATIC;
 
 				pos = position.getBytes();
 				out.write(pos);
@@ -367,14 +392,14 @@ public class ClientTest {
 				Constants.MOTOR_LEFT.stop();
 			}
 		} catch (IOException e) {
-			System.err.println("Failed to create output stream");
-			System.exit(1);
+			LCD.clear();
+			LCD.drawString("Falha abrir arquivo", 0, 0);
 		}
 		try {
 			out.close();
 		} catch (IOException e) {
-			System.err.println("Failed to close output stream");
-			System.exit(1);
+			LCD.clear();
+			LCD.drawString("Falha fechar arquivo", 0, 0);
 		}
 	}
 
