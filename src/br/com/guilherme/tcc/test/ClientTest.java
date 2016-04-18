@@ -106,7 +106,6 @@ public class ClientTest {
 				} catch (IOException e) {
 					LCD.clear();
 					LCD.drawString("Deu erro: " + e.getCause().toString(), 0, 0);
-					// System.exit(1);
 				}
 			}
 		}
