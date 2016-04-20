@@ -30,6 +30,7 @@ public class ClientTest {
 	private static long prev_deg_l_manual = 0;
 	private static Double theta = 0d;
 	private static Time time;
+	private static NXTConnection conexao;
 
 	// metodo principal
 	public static void main(String[] args) {
@@ -38,11 +39,12 @@ public class ClientTest {
 
 		time = new Time();
 
-		NXTConnection conexao = null;
+		conexao = null;
 		DataInputStream dataIn = null;
 		DataOutputStream dataOut = null;
 
 		while (true) {
+			LCD.clear();
 			LCD.drawString("Esperando", 0, 0);
 			conexao = Bluetooth.waitForConnection();
 
@@ -60,7 +62,13 @@ public class ClientTest {
 
 			while (!Button.ESCAPE.isDown()) {
 				try {
-					command = dataIn.readChar();
+					try {
+						command = dataIn.readChar();
+					} catch (IOException e) {
+						flag = false;
+						conexao = null;
+						break;
+					}
 
 					if (command == Constants.MANUAL_CONTROL) {
 						time.setTime();
@@ -94,13 +102,11 @@ public class ClientTest {
 						}
 					}
 					if (command == Constants.C_STOP_CONNECTION) {
-						dataIn.readChar();
-						dataIn.readDouble();
-						
-						dataIn = null;
-						dataOut = null;
-						conexao = null;
-
+						/*
+						 * dataIn.readChar(); dataIn.readDouble();
+						 * 
+						 * dataIn = null; dataOut = null; conexao = null;
+						 */
 						break;
 					}
 				} catch (IOException e) {
@@ -269,7 +275,8 @@ public class ClientTest {
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
-
+		Long prevTimeControl = t0;
+		
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
 
@@ -291,7 +298,7 @@ public class ClientTest {
 				semaphore.p();
 
 				timeControl = System.currentTimeMillis() - t0;
-
+				
 				if (Utils.checkIfPointBelongsCircumference(x_a, y_a, x, y)) {
 					x_d = Constants.R
 							* (Math.cos((Double.valueOf(0.5) * timeControl
@@ -323,7 +330,8 @@ public class ClientTest {
 				// Wk = Ci(k) + Cp(k)
 				// Ci(k) = Ci(k-1) + k_i*T.e
 				C_p = (float) (k_p * e_theta);
-				C_i = (float) (C_i + (k_i * (timeControl / 1000) * e_theta));
+				C_i = (float) (C_i + (k_i * ((System.currentTimeMillis() - prevTimeControl) / 1000) * e_theta));
+				prevTimeControl = System.currentTimeMillis();
 				if (C_i > 100)
 					C_i = 100f;
 				if (C_i < -100)
@@ -382,7 +390,6 @@ public class ClientTest {
 
 				semaphore.v();
 			}
-
 			if (flag) {
 				pos = Constants.FIM.getBytes();
 				dataOut.write(pos);
@@ -393,13 +400,18 @@ public class ClientTest {
 		} catch (IOException e) {
 			LCD.clear();
 			LCD.drawString("Falha abrir arquivo", 0, 0);
+			Constants.MOTOR_RIGTH.stop();
+			Constants.MOTOR_LEFT.stop();
 		}
 		try {
 			out.close();
 		} catch (IOException e) {
 			LCD.clear();
 			LCD.drawString("Falha fechar arquivo", 0, 0);
+			Constants.MOTOR_RIGTH.stop();
+			Constants.MOTOR_LEFT.stop();
 		}
+		return;
 	}
 
 	// thread responsavel pelo controle automatico
