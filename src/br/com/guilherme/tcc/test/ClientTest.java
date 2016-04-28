@@ -36,6 +36,7 @@ public class ClientTest {
 	public static void main(String[] args) {
 		char command = 0;
 		semaphore = new Semaphore(1);
+		byte[] pos = null;
 
 		time = new Time();
 
@@ -48,15 +49,22 @@ public class ClientTest {
 			LCD.drawString("Esperando", 0, 0);
 			conexao = Bluetooth.waitForConnection();
 
-			// configurando a conxão para se comunicar com dispositivos móveis,
-			// como
-			// um celular Android
+			// configurando a conxão para se comunicar com dispositivos móveis
 			conexao.setIOMode(NXTConnection.RAW);
 
 			// fluxo de entrada de dados
 			dataIn = conexao.openDataInputStream();
 			dataOut = conexao.openDataOutputStream();
 
+			try {
+				pos = Constants.CONNECTED.getBytes();
+				dataOut.write(pos);
+				dataOut.flush();
+			} catch (IOException err) {
+				LCD.clear();
+				LCD.drawString("Error: " + err.getCause().toString(), 0, 0);
+			}
+			
 			LCD.clear(); // limpando e tela
 			LCD.drawString("Conectado", 0, 0);
 
@@ -102,16 +110,11 @@ public class ClientTest {
 						}
 					}
 					if (command == Constants.C_STOP_CONNECTION) {
-						/*
-						 * dataIn.readChar(); dataIn.readDouble();
-						 * 
-						 * dataIn = null; dataOut = null; conexao = null;
-						 */
 						break;
 					}
 				} catch (IOException e) {
 					LCD.clear();
-					LCD.drawString("Deu erro: " + e.getCause().toString(), 0, 0);
+					LCD.drawString("Error: " + e.getCause().toString(), 0, 0);
 				}
 			}
 		}

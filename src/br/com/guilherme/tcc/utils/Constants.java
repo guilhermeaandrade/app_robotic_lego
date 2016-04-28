@@ -19,6 +19,7 @@ public class Constants {
 	public static final Double CONST_EQ = 0.0878;
 	public static final Double CONST_FREQ = 0.3;
 	public static final String FIM = "fim";
+	public static final String CONNECTED = "connected";
 	public static final int NUMBER_DECIMAL = 7;
 	public static final Integer MUL_CONST = 4;
 	public static final Integer OPT_MANUAL = 1;
