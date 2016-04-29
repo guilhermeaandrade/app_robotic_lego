@@ -64,10 +64,22 @@ public class ClientTest {
 				LCD.clear();
 				LCD.drawString("Error: " + err.getCause().toString(), 0, 0);
 			}
-			
+
 			LCD.clear(); // limpando e tela
 			LCD.drawString("Conectado", 0, 0);
 
+			//reinicializando as variáveis
+			k_p = 1.35;
+			k_i = 0.00;
+			x = 0d;
+			y = 0d;
+			x_a = 0d;
+			y_a = 0d;
+			prev_deg_r_manual = 0;
+			prev_deg_l_manual = 0;
+			theta = 0d;
+			time.resetTime();
+			
 			while (!Button.ESCAPE.isDown()) {
 				try {
 					try {
@@ -110,6 +122,8 @@ public class ClientTest {
 						}
 					}
 					if (command == Constants.C_STOP_CONNECTION) {
+						dataIn.readChar();
+						dataIn.readDouble();
 						break;
 					}
 				} catch (IOException e) {
@@ -210,8 +224,8 @@ public class ClientTest {
 					+ ","
 					+ 0d
 					+ ","
-					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
-							+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
+					+ "," + time.getTimeNow()
 					+ "," + Constants.OPT_MANUAL;
 
 			info = information.getBytes();
@@ -238,7 +252,6 @@ public class ClientTest {
 			x = x + (D_c * Math.cos(theta));
 			y = y + (D_c * Math.sin(theta));
 			theta = (theta + ((D_r - D_l) / Constants.L));
-
 		} catch (IOException e) {
 			LCD.clear();
 			LCD.drawString("Falha trackManualControl", 0, 0);
@@ -279,7 +292,7 @@ public class ClientTest {
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		Long prevTimeControl = t0;
-		
+
 		Double e_x, e_y, e_theta, theta_d;
 		Double x_d = 0.0, y_d = 0.0;
 
@@ -297,11 +310,11 @@ public class ClientTest {
 			}
 			out = new FileOutputStream(data);
 
-			while (System.currentTimeMillis() - t0 <= 35000 && flag) {
+			while (System.currentTimeMillis() - t0 <= 37770 && flag) {
 				semaphore.p();
 
 				timeControl = System.currentTimeMillis() - t0;
-				
+
 				if (Utils.checkIfPointBelongsCircumference(x_a, y_a, x, y)) {
 					x_d = Constants.R
 							* (Math.cos((Double.valueOf(0.5) * timeControl
@@ -333,7 +346,8 @@ public class ClientTest {
 				// Wk = Ci(k) + Cp(k)
 				// Ci(k) = Ci(k-1) + k_i*T.e
 				C_p = (float) (k_p * e_theta);
-				C_i = (float) (C_i + (k_i * ((System.currentTimeMillis() - prevTimeControl) / 1000) * e_theta));
+				C_i = (float) (C_i + (k_i
+						* ((System.currentTimeMillis() - prevTimeControl) / 1000) * e_theta));
 				prevTimeControl = System.currentTimeMillis();
 				if (C_i > 100)
 					C_i = 100f;
