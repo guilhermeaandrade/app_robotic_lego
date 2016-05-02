@@ -305,6 +305,8 @@ public class ClientTest {
 	public static void doControl(DataOutputStream dataOut) {
 		String position = null;
 		byte[] pos = null;
+		String information = null;
+		byte[] info = null;
 		Long timeControl = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
@@ -399,6 +401,23 @@ public class ClientTest {
 						+ ","
 						+ Utils.round(y)
 						+ ","
+						+ Utils.round(x_d)
+						+ ","
+						+ Utils.round(y_d)
+						+ ","
+						+ Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))) 
+						+ "," 
+						+ time.getTimeNow();
+
+				pos = position.getBytes();
+				out.write(pos);
+				out.write("\n".getBytes());
+				out.flush();
+				
+				information = Utils.round(x)
+						+ ","
+						+ Utils.round(y)
+						+ ","
 						+ Utils.round(theta)
 						+ ","
 						+ Utils.round(v.doubleValue())
@@ -406,17 +425,16 @@ public class ClientTest {
 						+ Utils.round(w.doubleValue())
 						+ ","
 						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
-								+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
-						+ "," + Constants.OPT_AUTOMATIC;
-
-				pos = position.getBytes();
-				out.write(pos);
-				out.write("\n".getBytes());
-				out.flush();
-
-				dataOut.write(pos);
+								+ Math.pow(e_y, 2)))) 
+						+ "," 
+						+ time.getTimeNow()
+						+ "," 
+						+ Constants.OPT_AUTOMATIC;
+				
+				info = information.getBytes();
+				dataOut.write(info);
 				dataOut.flush();
-
+				
 				x = x + (D_c * Math.cos(theta));
 				y = y + (D_c * Math.sin(theta));
 				theta = (theta + ((D_r - D_l) / Constants.L));
