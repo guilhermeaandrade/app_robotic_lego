@@ -16,7 +16,8 @@ public class Constants {
 	public static final Double r = 0.0215; // raio da roda
 	public static final Double R = 0.20;
 	public static final Double R_M = 0.40;
-	public static final Double CONST_EQ = 0.0878;
+	public static final Double R_M_OPTION = 0.30;
+	public static final Double CONST_EQ = 0.0860;
 	public static final Double CONST_FREQ = 0.3;
 	public static final String FIM = "fim";
 	public static final String CONNECTED = "connected";
@@ -24,7 +25,8 @@ public class Constants {
 	public static final Integer MUL_CONST = 4;
 	public static final Integer OPT_MANUAL = 1;
 	public static final Integer OPT_AUTOMATIC = 0;
-
+	public static final Double CONSTANT_VEL = 0.1;
+	
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida
 	// x^2 + y^2 - 2ax - 2by + a^2 + b^2 - r^2 = 0 -> equação geral

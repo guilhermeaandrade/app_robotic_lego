@@ -322,6 +322,7 @@ public class ClientTest {
 
 		FileOutputStream out = null;
 		File data = null;
+		
 		try {
 			data = new File("data.txt");
 			if (data.exists()) {
@@ -361,7 +362,7 @@ public class ClientTest {
 								+ Math.pow(e_y, 2)))) + Math.exp(-(Math
 								.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
 
-				v = (float) (0.1 * value + Constants.CONST_EQ);
+				v = (float) (Constants.CONSTANT_VEL * value + Constants.CONST_EQ);
 
 				// Wk = Ci(k) + Cp(k)
 				// Ci(k) = Ci(k-1) + k_i*T.e
