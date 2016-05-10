@@ -26,6 +26,7 @@ public class Constants {
 	public static final Integer OPT_MANUAL = 1;
 	public static final Integer OPT_AUTOMATIC = 0;
 	public static final Double CONSTANT_VEL = 0.1;
+	public static final Integer CONSTANT_VELOCITY = 3;
 	
 	// DEFINIÇÃO DA FUNÇÃO REDUZIDA DA CIRCUNFERENCIA
 	// (x - a)^2 + (y - b)^2 = r^2; -> equação reduzida

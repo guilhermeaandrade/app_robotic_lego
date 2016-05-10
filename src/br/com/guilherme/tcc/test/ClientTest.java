@@ -24,16 +24,18 @@ public class ClientTest {
 	private static Double k_i = 0.00;
 	private static Double x = 0d;
 	private static Double y = 0d;
-	private static Double x_a = 0d;
+	private static Double x_a = 0.d;
 	private static Double y_a = 0d;
 	private static long prev_deg_r_manual = 0;
 	private static long prev_deg_l_manual = 0;
-	private static Double theta = 0d;
+	private static Double theta = 0d;// Math.PI;
 	private static Time time;
 	private static NXTConnection conexao;
 	public static File manualFile = null;
 	public static FileOutputStream fousManualFile = null;
-	
+	private static long manualTime = 0;
+	private static long prevManualTime = 0;
+
 	// metodo principal
 	public static void main(String[] args) {
 		char command = 0;
@@ -45,7 +47,7 @@ public class ClientTest {
 		conexao = null;
 		DataInputStream dataIn = null;
 		DataOutputStream dataOut = null;
-	
+
 		while (true) {
 			LCD.clear();
 			LCD.drawString("Esperando", 0, 0);
@@ -62,7 +64,7 @@ public class ClientTest {
 				connected = Constants.CONNECTED.getBytes();
 				dataOut.write(connected);
 				dataOut.flush();
-				
+
 			} catch (IOException err) {
 				LCD.clear();
 				LCD.drawString("Error: " + err.getCause().toString(), 0, 0);
@@ -70,20 +72,32 @@ public class ClientTest {
 
 			LCD.clear(); // limpando e tela
 			LCD.drawString("Conectado", 0, 0);
-			
+
 			try {
 				manualFile = new File("dataManual.txt");
-				if(manualFile.exists()) {
+				if (manualFile.exists()) {
 					manualFile.delete();
 					manualFile.createNewFile();
 				}
 				fousManualFile = new FileOutputStream(manualFile);
-				
-			}catch (IOException e) {
+
+				// reinicializando as variáveis
+				k_p = 1.35;
+				k_i = 0.00;
+				x = 0d;
+				y = 0d;
+				x_a = 0d;
+				y_a = 0d;
+				prev_deg_r_manual = 0;
+				prev_deg_l_manual = 0;
+				theta = 0d;
+				time.resetTime();
+
+			} catch (IOException e) {
 				LCD.clear();
 				LCD.drawString("Falha arquivo manual", 0, 0);
 			}
-			
+
 			while (!Button.ESCAPE.isDown()) {
 				try {
 					try {
@@ -91,8 +105,8 @@ public class ClientTest {
 					} catch (IOException e) {
 						flag = false;
 						conexao = null;
-						
-						//reinicializando as variáveis
+
+						// reinicializando as variáveis
 						k_p = 1.35;
 						k_i = 0.00;
 						x = 0d;
@@ -103,11 +117,10 @@ public class ClientTest {
 						prev_deg_l_manual = 0;
 						theta = 0d;
 						time.resetTime();
-						
+
 						fousManualFile.close();
 						manualFile = null;
 						fousManualFile = null;
-						
 						break;
 					}
 
@@ -157,9 +170,12 @@ public class ClientTest {
 
 	// metodo responsavel por realizar o movimento no Robo
 	public static void performMove(char cmd, Double speed, DataOutputStream out) {
-		Integer velocidade;
-		if (speed < 0) velocidade = 10;
-		else velocidade = speed.intValue();
+		Integer velocidade = 0;
+		if (speed < 20) {
+			velocidade = 150;
+		} else {
+			velocidade = Constants.CONSTANT_VELOCITY * speed.intValue();
+		}
 
 		Constants.MOTOR_RIGTH.setSpeed(velocidade);
 		Constants.MOTOR_LEFT.setSpeed(velocidade);
@@ -168,36 +184,45 @@ public class ClientTest {
 		case Constants.FWD:
 			Constants.MOTOR_RIGTH.forward();
 			Constants.MOTOR_LEFT.forward();
-			trackManualControl(velocidade, out);
+			prevManualTime = System.currentTimeMillis();
+			// trackManualControl(velocidade, out);
 			break;
 
 		case Constants.BWD:
 			Constants.MOTOR_RIGTH.backward();
 			Constants.MOTOR_LEFT.backward();
-			trackManualControl(velocidade, out);
+			prevManualTime = System.currentTimeMillis();
+			// trackManualControl(velocidade, out);
 			break;
 
 		case Constants.LEFT:
 			Constants.MOTOR_RIGTH.forward();
 			Constants.MOTOR_LEFT.backward();
-			trackManualControl(velocidade, out);
+			prevManualTime = System.currentTimeMillis();
+			// trackManualControl(velocidade, out);
 			break;
 
 		case Constants.RIGHT:
 			Constants.MOTOR_RIGTH.backward();
 			Constants.MOTOR_LEFT.forward();
-			trackManualControl(velocidade, out);
+			prevManualTime = System.currentTimeMillis();
+			// trackManualControl(velocidade, out);
 			break;
 
 		case Constants.STOP:
 			Constants.MOTOR_RIGTH.stop();
 			Constants.MOTOR_LEFT.stop();
+			manualTime = System.currentTimeMillis() - prevManualTime;
+			trackManualControl(velocidade, out);
+			prevManualTime = 0;
 			break;
 		}
+		//trackManualControl(velocidade, out);
 	}
 
 	// metodo responsavel por realizar rastreio manual
-	private static void trackManualControl(Integer velocidade, DataOutputStream out) {
+	private static void trackManualControl(Integer velocidade,
+			DataOutputStream out) {
 		String position = null;
 		String information = null;
 		byte[] pos = null;
@@ -212,45 +237,8 @@ public class ClientTest {
 		Double D_c;
 
 		try {
-			// armazena informações no arquivo
-			position = Utils.round(x) 
-					+ "," 
-					+ Utils.round(y) 
-					+ ","
-					+ Utils.round(theta) 
-					+ "," 
-					+ deg_r 
-					+ "," 
-					+ deg_l;
-			
-			pos = position.getBytes();
-			fousManualFile.write(pos);
-			fousManualFile.write("\n".getBytes());
-			fousManualFile.flush();
-
 			e_x = x_a - x;
 			e_y = y_a - y;
-
-			// envia informações para o dispositivo
-			information = Utils.round(x)
-					+ ","
-					+ Utils.round(y)
-					+ ","
-					+ Utils.round(theta)
-					+ ","
-					+ velocidade.doubleValue()
-					+ ","
-					+ 0d
-					+ ","
-					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
-					+ "," 
-					+ time.getTimeNow()
-					+ "," 
-					+ Constants.OPT_MANUAL;
-
-			info = information.getBytes();
-			out.write(info);
-			out.flush();
 
 			deg_r = Constants.MOTOR_RIGTH.getTachoCount() - prev_deg_r_manual;
 			prev_deg_r_manual = Constants.MOTOR_RIGTH.getTachoCount();
@@ -262,16 +250,32 @@ public class ClientTest {
 			D_l = ((2 * Math.PI * Constants.r * deg_l) / 360);
 			D_c = (D_r + D_l) / 2;
 
-			position = Utils.round(x) 
-					+ "," 
-					+ Utils.round(y) 
+			// envia informações para o dispositivo
+			information = Utils.round(x)
 					+ ","
-					+ Utils.round(theta) 
-					+ "," 
-					+ deg_r 
-					+ "," 
-					+ deg_l;
-			
+					+ Utils.round(y)
+					+ ","
+					+ Utils.round(theta)
+					+ ","
+					+ velocidade.doubleValue()
+					* Constants.DEG_TO_RAD
+					+ ","
+					+ (((D_r/manualTime)-(D_l/manualTime))/Constants.L)
+					+ ","
+					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
+							+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+					+ "," + Constants.OPT_MANUAL;
+
+			info = information.getBytes();
+			out.write(info);
+			out.flush();
+
+			// armazena informações no arquivo
+			position = Utils.round(x) + "," + Utils.round(y) + ","
+					+ Utils.round(theta) + "," + deg_r + "," + deg_l + ","
+					+ Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)) + ","
+					+ velocidade.intValue() + "," + time.getTimeNow();
+
 			pos = position.getBytes();
 			fousManualFile.write(pos);
 			fousManualFile.write("\n".getBytes());
@@ -280,7 +284,7 @@ public class ClientTest {
 			x = x + (D_c * Math.cos(theta));
 			y = y + (D_c * Math.sin(theta));
 			theta = (theta + ((D_r - D_l) / Constants.L));
-			
+
 		} catch (IOException e) {
 			LCD.clear();
 			LCD.drawString("Falha trackManualControl", 0, 0);
@@ -288,7 +292,8 @@ public class ClientTest {
 	}
 
 	// metodo responsavel por realizar movimento manual
-	public static void executeMoveManual(DataInputStream in, DataOutputStream out) {
+	public static void executeMoveManual(DataInputStream in,
+			DataOutputStream out) {
 		char letra = 0;
 		Double speed = 0d;
 		try {
@@ -314,7 +319,7 @@ public class ClientTest {
 		Long prevTimeControl = t0;
 
 		Double e_x, e_y, e_theta, theta_d;
-		Double x_d = 0.0, y_d = 0.0;
+		Double x_d = x_a, y_d = y_a;
 
 		Double D_l, D_r, D_c;
 		Float v, w, w_r, w_l;
@@ -322,7 +327,7 @@ public class ClientTest {
 
 		FileOutputStream out = null;
 		File data = null;
-		
+
 		try {
 			data = new File("data.txt");
 			if (data.exists()) {
@@ -331,10 +336,16 @@ public class ClientTest {
 			}
 			out = new FileOutputStream(data);
 
-			while (System.currentTimeMillis() - t0 <= 37770 && flag) {
+			while (System.currentTimeMillis() - t0 <= 45300 && flag) {
 				semaphore.p();
 
 				timeControl = System.currentTimeMillis() - t0;
+
+				/*
+				 * if(timeControl < 25000) { x_a = 0d; y_a = 0d; }else
+				 * if(timeControl >= 25000 && timeControl < 51500) { x_a = 0.45;
+				 * y_a = 0.45; }else { x_a = 0.9; y_a = 0.9; }
+				 */
 
 				if (Utils.checkIfPointBelongsCircumference(x_a, y_a, x, y)) {
 					x_d = Constants.R
@@ -350,6 +361,12 @@ public class ClientTest {
 
 				e_x = x_d - x;
 				e_y = y_d - y;
+
+				/*
+				 * if(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)) < 0.020) {
+				 * Constants.MOTOR_RIGTH.stop(); Constants.MOTOR_LEFT.stop();
+				 * break; }
+				 */
 
 				theta_d = (Math.atan2(e_y, e_x)); // radianos
 				e_theta = (theta_d - theta);
@@ -406,15 +423,20 @@ public class ClientTest {
 						+ ","
 						+ Utils.round(y_d)
 						+ ","
-						+ Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))) 
-						+ "," 
-						+ time.getTimeNow();
+						+ w_r
+						* Constants.DEG_TO_RAD
+						+ ","
+						+ w_l
+						* Constants.DEG_TO_RAD
+						+ ","
+						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
+								+ Math.pow(e_y, 2)))) + "," + time.getTimeNow();
 
 				pos = position.getBytes();
 				out.write(pos);
 				out.write("\n".getBytes());
 				out.flush();
-				
+
 				information = Utils.round(x)
 						+ ","
 						+ Utils.round(y)
@@ -426,16 +448,13 @@ public class ClientTest {
 						+ Utils.round(w.doubleValue())
 						+ ","
 						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
-								+ Math.pow(e_y, 2)))) 
-						+ "," 
-						+ time.getTimeNow()
-						+ "," 
-						+ Constants.OPT_AUTOMATIC;
-				
+								+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+						+ "," + Constants.OPT_AUTOMATIC;
+
 				info = information.getBytes();
 				dataOut.write(info);
 				dataOut.flush();
-				
+
 				x = x + (D_c * Math.cos(theta));
 				y = y + (D_c * Math.sin(theta));
 				theta = (theta + ((D_r - D_l) / Constants.L));
