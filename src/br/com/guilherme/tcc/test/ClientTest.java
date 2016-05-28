@@ -36,6 +36,8 @@ public class ClientTest {
 	public static FileOutputStream fousManualFile = null;
 	public static File hybridFile = null;
 	public static FileOutputStream fousHybridFile = null;
+	public static File config = null;
+	public static FileOutputStream fousConfigFile = null;
 	
 	private static long manualTime = 0;
 	private static long prevManualTime = 0;
@@ -51,6 +53,9 @@ public class ClientTest {
 		conexao = null;
 		DataInputStream dataIn = null;
 		DataOutputStream dataOut = null;
+		
+		String configu = null;
+		byte[] conf = null;
 
 		while (true) {
 			LCD.clear();
@@ -85,26 +90,17 @@ public class ClientTest {
 				}
 				fousHybridFile = new FileOutputStream(hybridFile);
 				
-				/*
-				manualFile = new File("dataManual.txt");
-				if (manualFile.exists()) {
-					manualFile.delete();
-					manualFile.createNewFile();
+				config = new File("config.txt");
+				if(config.exists()) {
+					config.delete();
+					config.createNewFile();
 				}
-				fousManualFile = new FileOutputStream(manualFile);
-				*/
+				fousConfigFile = new FileOutputStream(config);
+				
 				// reinicializando as variáveis
-				k_p = 1.35;
-				k_i = 0.00;
-				x = 0d;
-				y = 0d;
-				x_a = 0d;
-				y_a = 0d;
 				prev_deg_r_manual = 0;
 				prev_deg_l_manual = 0;
-				theta = 0d;
-				time.resetTime();
-
+				
 			} catch (IOException e) {
 				LCD.clear();
 				LCD.drawString("Falha arquivo", 0, 0);
@@ -119,30 +115,27 @@ public class ClientTest {
 						conexao = null;
 
 						// reinicializando as variáveis
-						k_p = 1.35;
-						k_i = 0.00;
-						x = 0d;
-						y = 0d;
-						x_a = 0d;
-						y_a = 0d;
 						prev_deg_r_manual = 0;
 						prev_deg_l_manual = 0;
-						theta = 0d;
-						time.resetTime();
-
+						
 						fousHybridFile.close();
 						hybridFile = null;
 						fousHybridFile = null;
 						
-						/*
-						fousManualFile.close();
-						manualFile = null;
-						fousManualFile = null;
-						*/
+						fousConfigFile.close();
+						config = null;
+						fousConfigFile = null;
+						
 						break;
 					}
-
+					
 					if (command == Constants.MANUAL_CONTROL) {
+						configu = Character.toString(Constants.MANUAL_CONTROL);
+						conf = configu.getBytes();
+						fousConfigFile.write(conf);
+						fousConfigFile.write("\n".getBytes());
+						fousConfigFile.flush();
+						
 						time.setTime();
 						flag = false;
 						semaphore.p();
@@ -150,6 +143,12 @@ public class ClientTest {
 						semaphore.v();
 					}
 					if (command == Constants.AUTO_CONTROL) {
+						configu = Character.toString(Constants.AUTO_CONTROL);
+						conf = configu.getBytes();
+						fousConfigFile.write(conf);
+						fousConfigFile.write("\n".getBytes());
+						fousConfigFile.flush();
+						
 						time.setTime();
 						flag = true;
 						dataIn.readChar();
@@ -172,6 +171,17 @@ public class ClientTest {
 							y_a = dataIn.readDouble();
 							break;
 						}
+						
+						configu = identify 
+								+ "," + k_p + "," 
+								+ k_i + "," + x 
+								+ "," + y + "," 
+								+ x_a + "," + y_a;
+						
+						conf = configu.getBytes();
+						fousConfigFile.write(conf);
+						fousConfigFile.write("\n".getBytes());
+						fousConfigFile.flush();
 					}
 					if (command == Constants.C_STOP_CONNECTION) {
 						dataIn.readChar();
@@ -199,38 +209,38 @@ public class ClientTest {
 		Constants.MOTOR_LEFT.setSpeed(velocidade);
 
 		switch (cmd) {
-		case Constants.FWD:
-			Constants.MOTOR_RIGTH.forward();
-			Constants.MOTOR_LEFT.forward();
-			prevManualTime = System.currentTimeMillis();
-			break;
-
-		case Constants.BWD:
-			Constants.MOTOR_RIGTH.backward();
-			Constants.MOTOR_LEFT.backward();
-			prevManualTime = System.currentTimeMillis();
-			break;
-
-		case Constants.LEFT:
-			Constants.MOTOR_RIGTH.forward();
-			Constants.MOTOR_LEFT.backward();
-			prevManualTime = System.currentTimeMillis();
-			break;
-
-		case Constants.RIGHT:
-			Constants.MOTOR_RIGTH.backward();
-			Constants.MOTOR_LEFT.forward();
-			prevManualTime = System.currentTimeMillis();
-			break;
-
-		case Constants.STOP:
-			Constants.MOTOR_RIGTH.stop();
-			Constants.MOTOR_LEFT.stop();
-			manualTime = System.currentTimeMillis() - prevManualTime;
-			trackManualControl(velocidade, out);
-			prevManualTime = 0;
-			break;
-		}
+			case Constants.FWD:
+				Constants.MOTOR_RIGTH.forward();
+				Constants.MOTOR_LEFT.forward();
+				prevManualTime = System.currentTimeMillis();
+				break;
+	
+			case Constants.BWD:
+				Constants.MOTOR_RIGTH.backward();
+				Constants.MOTOR_LEFT.backward();
+				prevManualTime = System.currentTimeMillis();
+				break;
+	
+			case Constants.LEFT:
+				Constants.MOTOR_RIGTH.forward();
+				Constants.MOTOR_LEFT.backward();
+				prevManualTime = System.currentTimeMillis();
+				break;
+	
+			case Constants.RIGHT:
+				Constants.MOTOR_RIGTH.backward();
+				Constants.MOTOR_LEFT.forward();
+				prevManualTime = System.currentTimeMillis();
+				break;
+	
+			case Constants.STOP:
+				Constants.MOTOR_RIGTH.stop();
+				Constants.MOTOR_LEFT.stop();
+				manualTime = System.currentTimeMillis() - prevManualTime;
+				trackManualControl(velocidade, out);
+				prevManualTime = 0;
+				break;
+			}
 	}
 
 	// metodo responsavel por realizar rastreio manual
@@ -304,18 +314,14 @@ public class ClientTest {
 					+ ","
 					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
 					+ "," 
-					+ time.getTimeNow();
+					+ time.getTimeNow()
+					+ "," 
+					+ Constants.OPT_MANUAL;
 			
 			pos = position.getBytes();
 			fousHybridFile.write(pos);
 			fousHybridFile.write("\n".getBytes());
 			fousHybridFile.flush();
-			
-			/*
-			fousManualFile.write(pos);
-			fousManualFile.write("\n".getBytes());
-			fousManualFile.flush();
-			*/
 			
 			x = x + (D_c * Math.cos(theta));
 			y = y + (D_c * Math.sin(theta));
@@ -361,18 +367,7 @@ public class ClientTest {
 		Float v, w, w_r, w_l;
 		Float C_i = 0.0f, C_p;
 
-		//FileOutputStream out = null;
-		//File data = null;
-
 		try {
-			/*
-			data = new File("data.txt");
-			if (data.exists()) {
-				data.delete();
-				data.createNewFile();
-			}
-			out = new FileOutputStream(data);
-			*/
 			while (System.currentTimeMillis() - t0 <= 45300 && flag) {
 				semaphore.p();
 
@@ -483,18 +478,15 @@ public class ClientTest {
 						+ ","
 						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
 						+ "," 
-						+ time.getTimeNow();
+						+ time.getTimeNow()
+						+ "," 
+						+ Constants.OPT_AUTOMATIC;
 				
 				pos = position.getBytes();
 				fousHybridFile.write(pos);
 				fousHybridFile.write("\n".getBytes());
 				fousHybridFile.flush();
-				/*
-				out.write(pos);
-				out.write("\n".getBytes());
-				out.flush();
-				*/
-				
+			
 				information = Utils.round(x)
 						+ ","
 						+ Utils.round(y)
@@ -534,16 +526,6 @@ public class ClientTest {
 			Constants.MOTOR_RIGTH.stop();
 			Constants.MOTOR_LEFT.stop();
 		}
-		/*
-		try {
-			out.close();
-		} catch (IOException e) {
-			LCD.clear();
-			LCD.drawString("Falha fechar arquivo", 0, 0);
-			Constants.MOTOR_RIGTH.stop();
-			Constants.MOTOR_LEFT.stop();
-		}
-		*/
 		return;
 	}
 
