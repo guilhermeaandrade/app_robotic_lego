@@ -28,17 +28,17 @@ public class ClientTest {
 	private static Double y_a = 0d;
 	private static long prev_deg_r_manual = 0;
 	private static long prev_deg_l_manual = 0;
-	private static Double theta = 0d; //Math.PI;
+	private static Double theta = 0d; // Math.PI;
 	private static Time time;
 	private static NXTConnection conexao;
-	
+
 	public static File manualFile = null;
 	public static FileOutputStream fousManualFile = null;
 	public static File hybridFile = null;
 	public static FileOutputStream fousHybridFile = null;
 	public static File config = null;
 	public static FileOutputStream fousConfigFile = null;
-	
+
 	private static long manualTime = 0;
 	private static long prevManualTime = 0;
 
@@ -53,7 +53,7 @@ public class ClientTest {
 		conexao = null;
 		DataInputStream dataIn = null;
 		DataOutputStream dataOut = null;
-		
+
 		String configu = null;
 		byte[] conf = null;
 
@@ -84,23 +84,23 @@ public class ClientTest {
 
 			try {
 				hybridFile = new File("hybrid.txt");
-				if(hybridFile.exists()) {
+				if (hybridFile.exists()) {
 					hybridFile.delete();
 					hybridFile.createNewFile();
 				}
 				fousHybridFile = new FileOutputStream(hybridFile);
-				
+
 				config = new File("config.txt");
-				if(config.exists()) {
+				if (config.exists()) {
 					config.delete();
 					config.createNewFile();
 				}
 				fousConfigFile = new FileOutputStream(config);
-				
+
 				// reinicializando as variáveis
-				prev_deg_r_manual = 0;
-				prev_deg_l_manual = 0;
-				
+				// prev_deg_r_manual = 0;
+				// prev_deg_l_manual = 0;
+
 			} catch (IOException e) {
 				LCD.clear();
 				LCD.drawString("Falha arquivo", 0, 0);
@@ -115,27 +115,27 @@ public class ClientTest {
 						conexao = null;
 
 						// reinicializando as variáveis
-						prev_deg_r_manual = 0;
-						prev_deg_l_manual = 0;
-						
+						// prev_deg_r_manual = 0;
+						// prev_deg_l_manual = 0;
+
 						fousHybridFile.close();
 						hybridFile = null;
 						fousHybridFile = null;
-						
+
 						fousConfigFile.close();
 						config = null;
 						fousConfigFile = null;
-						
+
 						break;
 					}
-					
+
 					if (command == Constants.MANUAL_CONTROL) {
 						configu = Character.toString(Constants.MANUAL_CONTROL);
 						conf = configu.getBytes();
 						fousConfigFile.write(conf);
 						fousConfigFile.write("\n".getBytes());
 						fousConfigFile.flush();
-						
+
 						time.setTime();
 						flag = false;
 						semaphore.p();
@@ -148,7 +148,7 @@ public class ClientTest {
 						fousConfigFile.write(conf);
 						fousConfigFile.write("\n".getBytes());
 						fousConfigFile.flush();
-						
+
 						time.setTime();
 						flag = true;
 						dataIn.readChar();
@@ -171,13 +171,10 @@ public class ClientTest {
 							y_a = dataIn.readDouble();
 							break;
 						}
-						
-						configu = identify 
-								+ "," + k_p + "," 
-								+ k_i + "," + x 
-								+ "," + y + "," 
-								+ x_a + "," + y_a;
-						
+
+						configu = identify + "," + k_p + "," + k_i + "," + x
+								+ "," + y + "," + x_a + "," + y_a;
+
 						conf = configu.getBytes();
 						fousConfigFile.write(conf);
 						fousConfigFile.write("\n".getBytes());
@@ -209,38 +206,38 @@ public class ClientTest {
 		Constants.MOTOR_LEFT.setSpeed(velocidade);
 
 		switch (cmd) {
-			case Constants.FWD:
-				Constants.MOTOR_RIGTH.forward();
-				Constants.MOTOR_LEFT.forward();
-				prevManualTime = System.currentTimeMillis();
-				break;
-	
-			case Constants.BWD:
-				Constants.MOTOR_RIGTH.backward();
-				Constants.MOTOR_LEFT.backward();
-				prevManualTime = System.currentTimeMillis();
-				break;
-	
-			case Constants.LEFT:
-				Constants.MOTOR_RIGTH.forward();
-				Constants.MOTOR_LEFT.backward();
-				prevManualTime = System.currentTimeMillis();
-				break;
-	
-			case Constants.RIGHT:
-				Constants.MOTOR_RIGTH.backward();
-				Constants.MOTOR_LEFT.forward();
-				prevManualTime = System.currentTimeMillis();
-				break;
-	
-			case Constants.STOP:
-				Constants.MOTOR_RIGTH.stop();
-				Constants.MOTOR_LEFT.stop();
-				manualTime = System.currentTimeMillis() - prevManualTime;
-				trackManualControl(velocidade, out);
-				prevManualTime = 0;
-				break;
-			}
+		case Constants.FWD:
+			Constants.MOTOR_RIGTH.forward();
+			Constants.MOTOR_LEFT.forward();
+			prevManualTime = System.currentTimeMillis();
+			break;
+
+		case Constants.BWD:
+			Constants.MOTOR_RIGTH.backward();
+			Constants.MOTOR_LEFT.backward();
+			prevManualTime = System.currentTimeMillis();
+			break;
+
+		case Constants.LEFT:
+			Constants.MOTOR_RIGTH.forward();
+			Constants.MOTOR_LEFT.backward();
+			prevManualTime = System.currentTimeMillis();
+			break;
+
+		case Constants.RIGHT:
+			Constants.MOTOR_RIGTH.backward();
+			Constants.MOTOR_LEFT.forward();
+			prevManualTime = System.currentTimeMillis();
+			break;
+
+		case Constants.STOP:
+			Constants.MOTOR_RIGTH.stop();
+			Constants.MOTOR_LEFT.stop();
+			manualTime = System.currentTimeMillis() - prevManualTime;
+			trackManualControl(velocidade, out);
+			prevManualTime = 0;
+			break;
+		}
 	}
 
 	// metodo responsavel por realizar rastreio manual
@@ -251,28 +248,27 @@ public class ClientTest {
 		byte[] pos = null;
 		byte[] info = null;
 
-		long deg_r = 0;
-		long deg_l = 0;
-
-		Double e_x, e_y;
-		Double D_l;
-		Double D_r;
-		Double D_c;
+		Double e_x = 0d, e_y = 0d;
+		Double D_l = 0d;
+		Double D_r = 0d;
+		Double D_c = 0d;
 
 		try {
 			e_x = x_a - x;
 			e_y = y_a - y;
 
-			deg_r = Constants.MOTOR_RIGTH.getTachoCount() - prev_deg_r_manual;
+			long deg_r = Constants.MOTOR_RIGTH.getTachoCount()
+					- prev_deg_r_manual;
 			prev_deg_r_manual = Constants.MOTOR_RIGTH.getTachoCount();
 
-			deg_l = Constants.MOTOR_LEFT.getTachoCount() - prev_deg_l_manual;
+			long deg_l = Constants.MOTOR_LEFT.getTachoCount()
+					- prev_deg_l_manual;
 			prev_deg_l_manual = Constants.MOTOR_LEFT.getTachoCount();
 
 			D_r = ((2 * Math.PI * Constants.r * deg_r) / 360);
 			D_l = ((2 * Math.PI * Constants.r * deg_l) / 360);
 			D_c = (D_r + D_l) / 2;
-			
+
 			// envia informações para o dispositivo
 			information = Utils.round(x)
 					+ ","
@@ -280,15 +276,14 @@ public class ClientTest {
 					+ ","
 					+ Utils.round(theta)
 					+ ","
-					+ velocidade.doubleValue()* Constants.DEG_TO_RAD
+					+ velocidade.doubleValue()
+					* Constants.DEG_TO_RAD
 					+ ","
-					+ (((D_r/(manualTime/1000.0000))-(D_l/(manualTime/1000.0000)))/Constants.L)
+					+ (((D_r / (manualTime / 1000.0000)) - (D_l / (manualTime / 1000.0000))) / Constants.L)
 					+ ","
-					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
-					+ "," 
-					+ time.getTimeNow()
-					+ "," 
-					+ Constants.OPT_MANUAL;
+					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
+							+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+					+ "," + Constants.OPT_MANUAL;
 
 			info = information.getBytes();
 			out.write(info);
@@ -296,36 +291,72 @@ public class ClientTest {
 
 			// armazena informações no arquivo
 			/*
-			position = Utils.round(x) + "," + Utils.round(y) + ","
-					+ Utils.round(theta) + "," + deg_r + "," + deg_l + ","
-					+ Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)) + ","
-					+ velocidade.intValue() + "," + time.getTimeNow();
-			*/
+			 * position = Utils.round(x) + "," + Utils.round(y) + "," +
+			 * Utils.round(theta) + "," + deg_r + "," + deg_l + "," +
+			 * Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)) + "," +
+			 * velocidade.intValue() + "," + time.getTimeNow();
+			 */
+
 			
-			position = Utils.round(x)
-					+ ","
-					+ Utils.round(y)
-					+ ","
-					+ Utils.round(theta)
-					+ ","
-					+ velocidade.doubleValue()* Constants.DEG_TO_RAD
-					+ ","
-					+ (((D_r/(manualTime/1000.0000))-(D_l/(manualTime/1000.0000)))/Constants.L)
-					+ ","
-					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
-					+ "," 
-					+ time.getTimeNow()
-					+ "," 
-					+ Constants.OPT_MANUAL;
+			 position = Utils.round(x) + "," + Utils.round(y) + "," +
+			 Utils.round(theta) + "," + velocidade.doubleValue()*
+			 Constants.DEG_TO_RAD + "," +
+			 (((D_r/(manualTime/1000.0000))-(D_l/(
+			  manualTime/1000.0000)))/Constants.L) + "," +
+			  Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) +
+			  "," + time.getTimeNow() + "," + Constants.OPT_MANUAL;
+			 
+			/*
+			position = Utils.round(x) + "," + Utils.round(y) + ","
+					+ Utils.round(theta) + "," + Utils.round(D_r) + ","
+					+ Utils.round(D_l) + "," + Utils.round(D_c) + ","
+					+ time.getTimeNow() + "," + Constants.OPT_MANUAL; */
+			pos = position.getBytes();
+			fousHybridFile.write(pos);
+			fousHybridFile.write("\n".getBytes());
+			fousHybridFile.flush();
+
+			x = x + (D_c * Math.cos(theta));
+			y = y + (D_c * Math.sin(theta));
+			theta = (theta + ((D_r - D_l) / Constants.L));
+
+			/*position = Utils.round(x) + "," + Utils.round(y) + ","
+					+ Utils.round(theta) + "," + Utils.round(D_r) + ","
+					+ Utils.round(D_l) + "," + Utils.round(D_c) + ","
+					+ time.getTimeNow() + "," + Constants.OPT_MANUAL; */
+
+			position = Utils.round(x) + "," + Utils.round(y) + "," +
+					 Utils.round(theta) + "," + velocidade.doubleValue()*
+					 Constants.DEG_TO_RAD + "," +
+					 (((D_r/(manualTime/1000.0000))-(D_l/(
+					  manualTime/1000.0000)))/Constants.L) + "," +
+					  Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) +
+					  "," + time.getTimeNow() + "," + Constants.OPT_MANUAL;
 			
 			pos = position.getBytes();
 			fousHybridFile.write(pos);
 			fousHybridFile.write("\n".getBytes());
 			fousHybridFile.flush();
-			
-			x = x + (D_c * Math.cos(theta));
-			y = y + (D_c * Math.sin(theta));
-			theta = (theta + ((D_r - D_l) / Constants.L));
+
+			// envia informações para o dispositivo
+			information = Utils.round(x)
+					+ ","
+					+ Utils.round(y)
+					+ ","
+					+ Utils.round(theta)
+					+ ","
+					+ velocidade.doubleValue()
+					* Constants.DEG_TO_RAD
+					+ ","
+					+ (((D_r / (manualTime / 1000.0000)) - (D_l / (manualTime / 1000.0000))) / Constants.L)
+					+ ","
+					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
+							+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+					+ "," + Constants.OPT_MANUAL;
+
+			info = information.getBytes();
+			out.write(info);
+			out.flush();
 
 		} catch (IOException e) {
 			LCD.clear();
@@ -360,15 +391,15 @@ public class ClientTest {
 		long t0 = System.currentTimeMillis();
 		Long prevTimeControl = t0;
 
-		Double e_x, e_y, e_theta, theta_d;
+		Double e_x = 0d, e_y = 0d, e_theta, theta_d;
 		Double x_d = x_a, y_d = y_a;
 
 		Double D_l, D_r, D_c;
-		Float v, w, w_r, w_l;
+		Float v = 0f, w = 0f, w_r = 0f, w_l = 0f;
 		Float C_i = 0.0f, C_p;
 
 		try {
-			while (System.currentTimeMillis() - t0 <= 45300 && flag) {
+			while (System.currentTimeMillis() - t0 <= 35300 && flag) {
 				semaphore.p();
 
 				timeControl = System.currentTimeMillis() - t0;
@@ -411,7 +442,8 @@ public class ClientTest {
 								+ Math.pow(e_y, 2)))) + Math.exp(-(Math
 								.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
 
-				v = (float) (Constants.CONSTANT_VEL * value + Constants.CONST_EQ);
+				v = (float) ((0.9*0.1*0.2) + (0.1*value));
+				//v = (float) (Constants.CONSTANT_VEL * value + Constants.CONST_EQ);
 
 				// Wk = Ci(k) + Cp(k)
 				// Ci(k) = Ci(k-1) + k_i*T.e
@@ -448,24 +480,13 @@ public class ClientTest {
 				D_c = (D_r + D_l) / 2;
 
 				/*
-				position = Utils.round(x)
-						+ ","
-						+ Utils.round(y)
-						+ ","
-						+ Utils.round(x_d)
-						+ ","
-						+ Utils.round(y_d)
-						+ ","
-						+ w_r
-						* Constants.DEG_TO_RAD
-						+ ","
-						+ w_l
-						* Constants.DEG_TO_RAD
-						+ ","
-						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
-								+ Math.pow(e_y, 2)))) + "," + time.getTimeNow();
-				*/
-				
+				 * position = Utils.round(x) + "," + Utils.round(y) + "," +
+				 * Utils.round(x_d) + "," + Utils.round(y_d) + "," + w_r
+				 * Constants.DEG_TO_RAD + "," + w_l Constants.DEG_TO_RAD + "," +
+				 * Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+				 * + "," + time.getTimeNow();
+				 */
+
 				position = Utils.round(x)
 						+ ","
 						+ Utils.round(y)
@@ -476,17 +497,15 @@ public class ClientTest {
 						+ ","
 						+ Double.parseDouble(w.toString())
 						+ ","
-						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
-						+ "," 
-						+ time.getTimeNow()
-						+ "," 
-						+ Constants.OPT_AUTOMATIC;
-				
+						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
+								+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+						+ "," + Constants.OPT_AUTOMATIC;
+
 				pos = position.getBytes();
 				fousHybridFile.write(pos);
 				fousHybridFile.write("\n".getBytes());
 				fousHybridFile.flush();
-			
+
 				information = Utils.round(x)
 						+ ","
 						+ Utils.round(y)
@@ -497,11 +516,9 @@ public class ClientTest {
 						+ ","
 						+ Utils.round(w.doubleValue())
 						+ ","
-						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
-						+ "," 
-						+ time.getTimeNow()
-						+ "," 
-						+ Constants.OPT_AUTOMATIC;
+						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
+								+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+						+ "," + Constants.OPT_AUTOMATIC;
 
 				info = information.getBytes();
 				dataOut.write(info);
@@ -513,6 +530,26 @@ public class ClientTest {
 
 				semaphore.v();
 			}
+
+			position = Utils.round(x)
+					+ ","
+					+ Utils.round(y)
+					+ ","
+					+ Utils.round(theta)
+					+ ","
+					+ Double.parseDouble(v.toString())
+					+ ","
+					+ Double.parseDouble(w.toString())
+					+ ","
+					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
+							+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
+					+ "," + Constants.OPT_AUTOMATIC;
+
+			pos = position.getBytes();
+			fousHybridFile.write(pos);
+			fousHybridFile.write("\n".getBytes());
+			fousHybridFile.flush();
+
 			if (flag) {
 				pos = Constants.FIM.getBytes();
 				dataOut.write(pos);
