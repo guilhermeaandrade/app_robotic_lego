@@ -21,14 +21,14 @@ public class ClientTest {
 	private static boolean flag = true;
 
 	private static Double k_p = 1.35;
-	private static Double k_i = 0.00;
+	private static Double k_i = 0.35;
 	private static Double x = 0d;
 	private static Double y = 0d;
 	private static Double x_a = 0d;
 	private static Double y_a = 0d;
 	private static long prev_deg_r_manual = 0;
 	private static long prev_deg_l_manual = 0;
-	private static Double theta = 0d; // Math.PI;
+	private static Double theta =  0d;//0d; // Math.PI;
 	private static Time time;
 	private static NXTConnection conexao;
 
@@ -53,10 +53,7 @@ public class ClientTest {
 		conexao = null;
 		DataInputStream dataIn = null;
 		DataOutputStream dataOut = null;
-
-		String configu = null;
-		byte[] conf = null;
-
+		
 		while (true) {
 			LCD.clear();
 			LCD.drawString("Esperando", 0, 0);
@@ -90,12 +87,12 @@ public class ClientTest {
 				}
 				fousHybridFile = new FileOutputStream(hybridFile);
 
-				config = new File("config.txt");
+				/*config = new File("config.txt");
 				if (config.exists()) {
 					config.delete();
 					config.createNewFile();
 				}
-				fousConfigFile = new FileOutputStream(config);
+				fousConfigFile = new FileOutputStream(config);*/
 
 				// reinicializando as variáveis
 				// prev_deg_r_manual = 0;
@@ -122,19 +119,19 @@ public class ClientTest {
 						hybridFile = null;
 						fousHybridFile = null;
 
-						fousConfigFile.close();
-						config = null;
-						fousConfigFile = null;
+						//fousConfigFile.close();
+						//config = null;
+						//fousConfigFile = null;
 
 						break;
 					}
 
 					if (command == Constants.MANUAL_CONTROL) {
-						configu = Character.toString(Constants.MANUAL_CONTROL);
-						conf = configu.getBytes();
-						fousConfigFile.write(conf);
-						fousConfigFile.write("\n".getBytes());
-						fousConfigFile.flush();
+						//configu = Character.toString(Constants.MANUAL_CONTROL);
+						//conf = configu.getBytes();
+						//fousConfigFile.write(conf);
+						//fousConfigFile.write("\n".getBytes());
+						//fousConfigFile.flush();
 
 						time.setTime();
 						flag = false;
@@ -143,11 +140,11 @@ public class ClientTest {
 						semaphore.v();
 					}
 					if (command == Constants.AUTO_CONTROL) {
-						configu = Character.toString(Constants.AUTO_CONTROL);
-						conf = configu.getBytes();
-						fousConfigFile.write(conf);
-						fousConfigFile.write("\n".getBytes());
-						fousConfigFile.flush();
+						//configu = Character.toString(Constants.AUTO_CONTROL);
+						//conf = configu.getBytes();
+						//fousConfigFile.write(conf);
+						//fousConfigFile.write("\n".getBytes());
+						//fousConfigFile.flush();
 
 						time.setTime();
 						flag = true;
@@ -171,14 +168,20 @@ public class ClientTest {
 							y_a = dataIn.readDouble();
 							break;
 						}
+						LCD.clear();
+						LCD.drawString(k_p.toString(), 0, 0);
+						LCD.drawString(k_i.toString(), 0, 1);
+						LCD.drawString(x.toString(), 0, 2);
+						LCD.drawString(y.toString(), 0, 3);
+						LCD.drawString(x_a.toString(), 0, 4);
+						LCD.drawString(y_a.toString(), 0, 5);
+						//configu = identify + "," + k_p + "," + k_i + "," + x
+						//		+ "," + y + "," + x_a + "," + y_a;
 
-						configu = identify + "," + k_p + "," + k_i + "," + x
-								+ "," + y + "," + x_a + "," + y_a;
-
-						conf = configu.getBytes();
-						fousConfigFile.write(conf);
-						fousConfigFile.write("\n".getBytes());
-						fousConfigFile.flush();
+						//conf = configu.getBytes();
+						//fousConfigFile.write(conf);
+						//fousConfigFile.write("\n".getBytes());
+						//fousConfigFile.flush();
 					}
 					if (command == Constants.C_STOP_CONNECTION) {
 						dataIn.readChar();
@@ -296,15 +299,17 @@ public class ClientTest {
 			 * Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)) + "," +
 			 * velocidade.intValue() + "," + time.getTimeNow();
 			 */
-
-			
-			 position = Utils.round(x) + "," + Utils.round(y) + "," +
-			 Utils.round(theta) + "," + velocidade.doubleValue()*
-			 Constants.DEG_TO_RAD + "," +
-			 (((D_r/(manualTime/1000.0000))-(D_l/(
-			  manualTime/1000.0000)))/Constants.L) + "," +
-			  Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) +
-			  "," + time.getTimeNow() + "," + Constants.OPT_MANUAL;
+			 position = Utils.round(x) 
+					 + "," 
+					 + Utils.round(y) 
+					 + "," 
+					 + Utils.round(theta) 
+					 + "," 
+					 + Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
+					 + "," 
+					 + time.getTimeNow() 
+					 + "," 
+					 + Constants.OPT_MANUAL;
 			 
 			/*
 			position = Utils.round(x) + "," + Utils.round(y) + ","
@@ -325,13 +330,17 @@ public class ClientTest {
 					+ Utils.round(D_l) + "," + Utils.round(D_c) + ","
 					+ time.getTimeNow() + "," + Constants.OPT_MANUAL; */
 
-			position = Utils.round(x) + "," + Utils.round(y) + "," +
-					 Utils.round(theta) + "," + velocidade.doubleValue()*
-					 Constants.DEG_TO_RAD + "," +
-					 (((D_r/(manualTime/1000.0000))-(D_l/(
-					  manualTime/1000.0000)))/Constants.L) + "," +
-					  Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) +
-					  "," + time.getTimeNow() + "," + Constants.OPT_MANUAL;
+			position = Utils.round(x) 
+					 + "," 
+					 + Utils.round(y) 
+					 + "," 
+					 + Utils.round(theta) 
+					 + "," 
+					 + Utils.round((Math.sqrt(Math.pow(e_x, 2)+ Math.pow(e_y, 2)))) 
+					 + "," 
+					 + time.getTimeNow() 
+					 + "," 
+					 + Constants.OPT_MANUAL;
 			
 			pos = position.getBytes();
 			fousHybridFile.write(pos);
@@ -386,20 +395,21 @@ public class ClientTest {
 		String information = null;
 		byte[] info = null;
 		Long timeControl = new Long(0);
+		Long timeAction = new Long(0);
 		long prev_deg_r = 0;
 		long prev_deg_l = 0;
 		long t0 = System.currentTimeMillis();
 		Long prevTimeControl = t0;
 
-		Double e_x = 0d, e_y = 0d, e_theta, theta_d;
+		Double e_x = 0d, e_y = 0d, e_theta = 0d, theta_d;
 		Double x_d = x_a, y_d = y_a;
 
 		Double D_l, D_r, D_c;
-		Float v = 0f, w = 0f, w_r = 0f, w_l = 0f;
-		Float C_i = 0.0f, C_p;
+		Float v = 0f, w_r = 0f, w_l = 0f;
+		Double C_i = 0d, C_p = 0d, w = 0d;
 
 		try {
-			while (System.currentTimeMillis() - t0 <= 35300 && flag) {
+			while (System.currentTimeMillis() - t0 <= 45500 && flag) {
 				semaphore.p();
 
 				timeControl = System.currentTimeMillis() - t0;
@@ -412,25 +422,25 @@ public class ClientTest {
 
 				if (Utils.checkIfPointBelongsCircumference(x_a, y_a, x, y)) {
 					x_d = Constants.R
-							* (Math.cos((Double.valueOf(0.5) * timeControl
+							* (Math.cos((Double.valueOf(0.3) * timeControl
 									.doubleValue()) / 1000)) + x_a;
 					y_d = Constants.R
-							* (Math.sin((Double.valueOf(0.5) * timeControl
+							* (Math.sin((Double.valueOf(0.3) * timeControl
 									.doubleValue()) / 1000)) + y_a;
 				} else {
 					x_d = x_a;
 					y_d = y_a;
 				}
-
+				
 				e_x = x_d - x;
 				e_y = y_d - y;
 
-				/*
-				 * if(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)) < 0.020) {
-				 * Constants.MOTOR_RIGTH.stop(); Constants.MOTOR_LEFT.stop();
-				 * break; }
-				 */
-
+				/*if(Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)) < 0.030) {
+					Constants.MOTOR_RIGTH.stop(); 
+					Constants.MOTOR_LEFT.stop();
+					break; 
+				}*/
+				 
 				theta_d = (Math.atan2(e_y, e_x)); // radianos
 				e_theta = (theta_d - theta);
 				e_theta = (Math.atan2(Math.sin(e_theta), Math.cos(e_theta)));
@@ -441,20 +451,22 @@ public class ClientTest {
 						/ ((Math.exp(Math.sqrt(Math.pow(e_x, 2)
 								+ Math.pow(e_y, 2)))) + Math.exp(-(Math
 								.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2)))));
-
-				v = (float) ((0.9*0.1*0.2) + (0.1*value));
+				
+				v = (float) ((Double.valueOf(0.93)*Double.valueOf(0.3)*Double.valueOf(0.2)) + (Double.valueOf(0.1))*value);
+				//v = (float) ((0.95*0.1*0.2) + (0.1*value));
 				//v = (float) (Constants.CONSTANT_VEL * value + Constants.CONST_EQ);
 
 				// Wk = Ci(k) + Cp(k)
 				// Ci(k) = Ci(k-1) + k_i*T.e
-				C_p = (float) (k_p * e_theta);
-				C_i = (float) (C_i + (k_i
-						* ((System.currentTimeMillis() - prevTimeControl) / 1000) * e_theta));
+				C_p =  k_p * e_theta;
+				timeAction = System.currentTimeMillis() - prevTimeControl;
+				C_i = C_i + k_i*(timeAction.doubleValue()/1000)*e_theta;
 				prevTimeControl = System.currentTimeMillis();
-				if (C_i > 100)
+				
+				/*if (C_i > 100)
 					C_i = 100f;
 				if (C_i < -100)
-					C_i = -100f;
+					C_i = -100f;*/
 				w = C_i + C_p;
 
 				w_r = (float) ((2 * v + w * Constants.L) / (2 * Constants.r)); // rad/s
@@ -479,15 +491,30 @@ public class ClientTest {
 				D_l = ((2 * Math.PI * Constants.r * deg_l) / 360);
 				D_c = (D_r + D_l) / 2;
 
-				/*
-				 * position = Utils.round(x) + "," + Utils.round(y) + "," +
-				 * Utils.round(x_d) + "," + Utils.round(y_d) + "," + w_r
-				 * Constants.DEG_TO_RAD + "," + w_l Constants.DEG_TO_RAD + "," +
-				 * Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
-				 * + "," + time.getTimeNow();
-				 */
+				
+				 position = Utils.round(x) 
+						 + "," 
+						 + Utils.round(y) 
+						 + "," 
+						 + Utils.round(theta)
+						 + ","
+						 //+ Utils.round(x_d) 
+						 //+ "," 
+						 //+ Utils.round(y_d) 
+						 //+ "," 
+						// + w_r*Constants.DEG_TO_RAD 
+						 //+ "," 
+						 //+ w_l*Constants.DEG_TO_RAD 
+						 //+ "," 
+						 + Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+						 //+ "," 
+						 //+ Utils.round(e_theta)
+						 + ","
+						 + time.getTimeNow()
+						 + "," 
+						 + Constants.OPT_AUTOMATIC;
 
-				position = Utils.round(x)
+				/*position = Utils.round(x)
 						+ ","
 						+ Utils.round(y)
 						+ ","
@@ -499,7 +526,7 @@ public class ClientTest {
 						+ ","
 						+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
 								+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
-						+ "," + Constants.OPT_AUTOMATIC;
+						+ "," + Constants.OPT_AUTOMATIC; */
 
 				pos = position.getBytes();
 				fousHybridFile.write(pos);
@@ -530,8 +557,30 @@ public class ClientTest {
 
 				semaphore.v();
 			}
-
-			position = Utils.round(x)
+			
+			position = Utils.round(x) 
+					 + "," 
+					 + Utils.round(y) 
+					 + "," 
+					 + Utils.round(theta)
+					 + ","
+					 //+ Utils.round(x_d) 
+					 //+ "," 
+					 //+ Utils.round(y_d) 
+					 //+ "," 
+					// + w_r*Constants.DEG_TO_RAD 
+					 //+ "," 
+					 //+ w_l*Constants.DEG_TO_RAD 
+					 //+ "," 
+					 + Utils.round((Math.sqrt(Math.pow(e_x, 2) + Math.pow(e_y, 2))))
+					 //+ "," 
+					 //+ Utils.round(e_theta)
+					 + ","
+					 + time.getTimeNow()
+					 + "," 
+					 + Constants.OPT_AUTOMATIC;
+			
+			/*position = Utils.round(x)
 					+ ","
 					+ Utils.round(y)
 					+ ","
@@ -543,7 +592,7 @@ public class ClientTest {
 					+ ","
 					+ Utils.round((Math.sqrt(Math.pow(e_x, 2)
 							+ Math.pow(e_y, 2)))) + "," + time.getTimeNow()
-					+ "," + Constants.OPT_AUTOMATIC;
+					+ "," + Constants.OPT_AUTOMATIC; */
 
 			pos = position.getBytes();
 			fousHybridFile.write(pos);
